@@ -67,18 +67,17 @@ class VkApiAccessor(BaseAccessor):
             self.logger.info(self.server)
 
     async def poll(self):
-        async with self.session.get(
-            self._build_query(
+        new_url = self._build_query(
                 host=self.server,
                 method="",
                 params={
                     "act": "a_check",
                     "key": self.key,
                     "ts": self.ts,
-                    "wait": 30,
+                    "wait": 5,
                 },
             )
-        ) as resp:
+        async with self.session.get(new_url) as resp:
             data = await resp.json()
             self.logger.info(data)
             self.ts = data["ts"]
@@ -89,16 +88,16 @@ class VkApiAccessor(BaseAccessor):
                     Update(
                         type=update["type"],
                         object=UpdateObject(
-                            id=update["object"]["id"],
-                            user_id=update["object"]["user_id"],
-                            body=update["object"]["body"],
+                            id=update["object"]["message"]["id"],
+                            user_id=update["object"]['message']["from_id"],
+                            body=update["object"]['message']["text"],
                         ),
                     )
                 )
-            await self.app.store.bots_manager.handle_updates(updates)
+        return updates
 
     async def send_message(self, message: Message) -> None:
-        async with self.session.get(
+        async with self.session.post(
             self._build_query(
                 API_PATH,
                 "messages.send",

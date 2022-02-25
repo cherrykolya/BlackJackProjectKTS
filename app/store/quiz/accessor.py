@@ -1,14 +1,14 @@
 from typing import Optional
 
 from app.base.base_accessor import BaseAccessor
-from app.quiz.models import (
-    Theme,
-    Question,
-    Answer,
-    ThemeModel,
-    QuestionModel,
-    AnswerModel,
-)
+# from app.quiz.models import (
+#     Theme,
+#     Question,
+#     Answer,
+#     ThemeModel,
+#     QuestionModel,
+#     AnswerModel,
+# )
 from app.store.database.gino import db
 from typing import List
 from asyncpg import ForeignKeyViolationError, NotNullViolationError

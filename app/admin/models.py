@@ -21,16 +21,9 @@ class Admin:
 
 # TODO
 # Дописать все необходимые поля модели
-class AdminModel(db.Model):
-    __tablename__ = "admins"
+# class AdminModel(db.Model):
+#     __tablename__ = "admins"
 
-    id = db.Column(db.Integer, nullable=False, primary_key=True)
-    email = db.Column(db.Unicode)
-    password = db.Column(db.Unicode)
-
-#class Airport(db.Model):
-#    __tablename__ = "aircrafts_data"
-#
-#    aircraft_code = db.Column(db.String(3), nullable=False)
-#    range = db.Column(db.Integer, nullable=False)
-#    model = db.Column(JSONB, nullable=False)
+#     id = db.Column(db.Integer, nullable=False, primary_key=True)
+#     email = db.Column(db.Unicode)
+#     password = db.Column(db.Unicode)
