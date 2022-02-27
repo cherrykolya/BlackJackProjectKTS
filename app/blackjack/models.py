@@ -12,7 +12,7 @@ class User:
 
 @dataclass
 class Table:
-    id: int
+    id: int # == peer_id, один стол в беседе
     created_at: str
     state: int
 
@@ -36,7 +36,7 @@ class TableModel(db.Model):
     __tablename__ ="table"
 
     id = db.Column(db.Integer, nullable=False, primary_key=True)
-    created_at = db.Column(db.DateTime, nullable=False)
+    #created_at = db.Column(db.DateTime(), server_default='now()', nullable=False)
     state = db.Column(db.Integer, nullable=False)
 
 class PlayerModel(db.Model):

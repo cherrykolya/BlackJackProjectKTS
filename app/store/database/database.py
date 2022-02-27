@@ -32,6 +32,6 @@ class Database:
         await db.gino.create_all() # добавил сам
 
     async def disconnect(self, *_, **kw):
-        #await db.pop_bind().close()
+        await db.pop_bind().close()
         print('disconnected from database')
 
