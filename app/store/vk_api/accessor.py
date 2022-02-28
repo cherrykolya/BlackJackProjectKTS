@@ -153,7 +153,7 @@ class VkApiAccessor(BaseAccessor):
             data = await resp.json()
             self.logger.info(data)
 
-    async def registered(self, params: dict = None, event_data: dict = None):
+    async def send_snackbar(self, params: dict = None, event_data: dict = None):
         params["event_data"] = sjson_dumps(event_data)
         params["access_token"] = self.app.config.bot.token
         #params = {"event_id":, "user_id":, "peer_id":, "event_data":event_data}
@@ -161,5 +161,17 @@ class VkApiAccessor(BaseAccessor):
             self._build_query(API_PATH, "messages.sendMessageEventAnswer", params)) as resp:
             data = await resp.json()
             self.logger.info(data)
+
+    async def get_username(self, vk_id: int) -> str:
+        params = {"user_ids": vk_id,
+                  "access_token": self.app.config.bot.token,}
+        
+        async with self.session.get(
+            self._build_query(API_PATH, "users.get", params,)) as resp:
+            data = await resp.json()
+            self.logger.info(data)
+        username = data["response"][0]["first_name"] + " " + data["response"][0]["last_name"]
+        return username
+
 
         

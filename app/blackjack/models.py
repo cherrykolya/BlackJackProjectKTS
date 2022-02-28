@@ -3,6 +3,7 @@ from typing import Optional
 
 from app.store.database.gino import db
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import ARRAY
 
 @dataclass
 class User:
@@ -22,6 +23,8 @@ class Player:
     table_id: int
     cash: int
     num_of_wins: int
+    cards: list
+    state: int
     
 
 # TODO: Написать модели user, player, gaming_table
@@ -37,7 +40,7 @@ class TableModel(db.Model):
 
     id = db.Column(db.Integer, nullable=False, primary_key=True)
     #created_at = db.Column(db.DateTime(), server_default='now()', nullable=False)
-    state = db.Column(db.Integer, nullable=False)
+    state = db.Column(db.Unicode, nullable=False)
 
 class PlayerModel(db.Model):
     __tablename__ ="player"
@@ -45,7 +48,9 @@ class PlayerModel(db.Model):
     vk_id = db.Column(db.Integer, db.ForeignKey("user.vk_id", ondelete = 'CASCADE'), nullable=False)
     table_id = db.Column(db.Integer, db.ForeignKey("table.id", ondelete = 'CASCADE'), nullable=False)
     cash = db.Column(db.Integer, nullable=False)
+    cards = db.Column(ARRAY(db.Integer), nullable=False)
     num_of_wins = db.Column(db.Integer, nullable=False)
+    state = db.Column(db.Integer, nullable=False)
 
 
 
