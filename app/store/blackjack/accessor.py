@@ -25,10 +25,10 @@ class BlackJackAccessor(BaseAccessor):
             pass
         
 
-    async def create_table(self, id: int, state: int):
+    async def create_table(self, id: int, deck: list,state: int):
         # TODO: изменить состояния
         if await self.get_table_by_id(id) is None:
-            await TableModel.create(id=id, state=state)
+            await TableModel.create(id=id, deck=deck, state=state)
         else:
             pass
 
@@ -69,6 +69,8 @@ class BlackJackAccessor(BaseAccessor):
         # modification here
         await PlayerModel.update.values(cards=cards).where(and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)).gino.all()
 
+    async def set_table_cards(self, table_id: int, cards: list):
+        await TableModel.update.values(deck=cards).where(TableModel.id == table_id).gino.all()
     #async def get_player_cards(self, vk_id: int, table_id: int):
     #    player = await PlayerModel.query.where(and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)).gino.all()
 

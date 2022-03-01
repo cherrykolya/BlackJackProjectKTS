@@ -40,6 +40,7 @@ class TableModel(db.Model):
 
     id = db.Column(db.Integer, nullable=False, primary_key=True)
     #created_at = db.Column(db.DateTime(), server_default='now()', nullable=False)
+    deck = db.Column(ARRAY(db.Unicode), nullable=False)
     state = db.Column(db.Unicode, nullable=False)
 
 class PlayerModel(db.Model):
@@ -48,7 +49,7 @@ class PlayerModel(db.Model):
     vk_id = db.Column(db.Integer, db.ForeignKey("user.vk_id", ondelete = 'CASCADE'), nullable=False)
     table_id = db.Column(db.Integer, db.ForeignKey("table.id", ondelete = 'CASCADE'), nullable=False)
     cash = db.Column(db.Integer, nullable=False)
-    cards = db.Column(ARRAY(db.Integer), nullable=False)
+    cards = db.Column(ARRAY(db.Unicode), nullable=False)
     num_of_wins = db.Column(db.Integer, nullable=False)
     state = db.Column(db.Integer, nullable=False)
 
