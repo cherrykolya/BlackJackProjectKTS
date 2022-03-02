@@ -10,19 +10,21 @@ class User:
     vk_id: int
     username: str
     info: dict
+    cash: int
+    num_of_wins: int
 
 @dataclass
 class Table:
     id: int # == peer_id, один стол в беседе
+    peer_id: int
     created_at: str
+    deck: list
     state: int
 
 @dataclass
 class Player:
     vk_id: int
     table_id: int
-    cash: int
-    num_of_wins: int
     cards: list
     state: int
     
@@ -34,12 +36,14 @@ class UserModel(db.Model):
     vk_id = db.Column(db.Integer, nullable=False, primary_key=True)
     username = db.Column(db.Unicode)
     info = db.Column(db.Unicode)
+    num_of_wins = db.Column(db.Integer, nullable=False)
+    cash = db.Column(db.Integer, nullable=False)
 
 class TableModel(db.Model):
     __tablename__ ="table"
     
     id = db.Column(db.Integer, nullable=False, primary_key=True)
-    #peer_id = db.Column(db.Integer, nullable=False)
+    peer_id = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime(), server_default='now()')
     deck = db.Column(ARRAY(db.Unicode), nullable=False)
     state = db.Column(db.Unicode, nullable=False)
@@ -49,9 +53,7 @@ class PlayerModel(db.Model):
 
     vk_id = db.Column(db.Integer, nullable=False)
     table_id = db.Column(db.Integer, db.ForeignKey("table.id", ondelete = 'CASCADE'), nullable=False)
-    cash = db.Column(db.Integer, nullable=False)
     cards = db.Column(ARRAY(db.Unicode), nullable=False)
-    num_of_wins = db.Column(db.Integer, nullable=False)
     state = db.Column(db.Integer, nullable=False)
 
 

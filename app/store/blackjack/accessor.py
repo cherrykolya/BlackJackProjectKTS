@@ -19,40 +19,50 @@ class BlackJackAccessor(BaseAccessor):
         
         if await self.get_player_by_id(player.vk_id, player.table_id) is None:
             await PlayerModel.create(vk_id=player.vk_id, table_id=player.table_id,
-                                     cash=player.cash, cards=player.cards,
-                                     num_of_wins=player.num_of_wins, state=player.state)
+                                     cards=player.cards, state=player.state)
         else:
             pass
         
 
-    async def create_table(self, id: int, deck: list,state: int):
+    async def create_table(self, peer_id: int, deck: list, state: int):
         # TODO: изменить состояния
-        if await self.get_table_by_id(id) is None:
-            await TableModel.create(id=id, deck=deck, state=state)
+        if await self.get_table_by_peer_id(peer_id) is None:
+            tables = await TableModel.query.where(TableModel.peer_id == peer_id).gino.all()
+            await TableModel.create(id=len(tables)+1,peer_id=peer_id, deck=deck, state=state)
         else:
             pass
 
     async def create_user(self, user: User):# vk_id: int, username: str, info: dict):
-        
         if await self.get_user_by_id(user.vk_id) is None:
-            await UserModel.create(vk_id=user.vk_id, username=user.username, info=user.info)
+            await UserModel.create(vk_id=user.vk_id,
+                                   username=user.username,
+                                   info=user.info,
+                                   num_of_wins=user.num_of_wins,
+                                   cash=user.cash)
         else:
             pass
+    
+    async def add_win_to_user(self, vk_id: int):
+        user = await self.get_user_by_id(vk_id)
+        await UserModel.update.values(num_of_wins=user.num_of_wins+1).where(UserModel.vk_id == vk_id).gino.all()
+
     
     async def get_player_by_id(self, vk_id: int, table_id:int):
         player = await PlayerModel.query.where(and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)).gino.all()
         if len(player) == 0:
             return None
         if len(player) == 1:
-            return Player(player[0].vk_id, player[0].table_id, player[0].cash,  player[0].num_of_wins, player[0].cards, player[0].state)
+            return Player(player[0].vk_id, player[0].table_id, player[0].cards, player[0].state)
 
     async def get_players_on_table(self, table_id: int):
         players = await PlayerModel.query.where(PlayerModel.table_id == table_id).gino.all()
         return players
 
     
-    async def get_table_by_id(self, id_:int) -> Optional[Table]:
-        table = await TableModel.query.where(TableModel.id == id_).gino.all()
+    async def get_table_by_peer_id(self, id_:int) -> Optional[Table]:
+        # Находим незавершенный стол в беседе peer_id
+        #table = await TableModel.query.where(TableModel.id == id_)).gino.all()
+        table = await TableModel.query.where(and_(TableModel.peer_id == id_, TableModel.state != '/end_game')).gino.all()
         if len(table) == 0:
             return None
         if len(table) == 1:
@@ -69,11 +79,15 @@ class BlackJackAccessor(BaseAccessor):
         # modification here
         await PlayerModel.update.values(cards=cards).where(and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)).gino.all()
 
-    async def set_table_cards(self, table_id: int, cards: list):
-        await TableModel.update.values(deck=cards).where(TableModel.id == table_id).gino.all()
+    async def set_table_cards(self, id: int, cards: list):
+        await TableModel.update.values(deck=cards).where(TableModel.id == id).gino.all()
 
     async def delete_table(self, table_id: int):
         await TableModel.delete.where(TableModel.id == table_id).gino.all()
+
+    async def set_user_cash(self, vk_id: int, cash: int):
+        user = await self.get_user_by_id(vk_id)
+        await UserModel.update.values(cash=user.cash + cash).where(UserModel.vk_id == vk_id).gino.all()
     
     #async def get_player_cards(self, vk_id: int, table_id: int):
     #    player = await PlayerModel.query.where(and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)).gino.all()
@@ -96,9 +110,8 @@ class BlackJackAccessor(BaseAccessor):
         if len(table) == 1:
             return table[0]
 
-    async def set_table_state(self, table_id: int, state):
-        print(1)
-        await TableModel.update.values(state=state).where(TableModel.id == table_id).gino.all()
+    async def set_table_state(self, id: int, state):
+        await TableModel.update.values(state=state).where(TableModel.id == id).gino.all()
         
     # async def create_theme(self, title: str) -> Theme:
     #     return theme
