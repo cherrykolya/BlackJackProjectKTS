@@ -37,16 +37,17 @@ class UserModel(db.Model):
 
 class TableModel(db.Model):
     __tablename__ ="table"
-
+    
     id = db.Column(db.Integer, nullable=False, primary_key=True)
-    #created_at = db.Column(db.DateTime(), server_default='now()', nullable=False)
+    #peer_id = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime(), server_default='now()')
     deck = db.Column(ARRAY(db.Unicode), nullable=False)
     state = db.Column(db.Unicode, nullable=False)
 
 class PlayerModel(db.Model):
     __tablename__ ="player"
 
-    vk_id = db.Column(db.Integer, db.ForeignKey("user.vk_id", ondelete = 'CASCADE'), nullable=False)
+    vk_id = db.Column(db.Integer, nullable=False)
     table_id = db.Column(db.Integer, db.ForeignKey("table.id", ondelete = 'CASCADE'), nullable=False)
     cash = db.Column(db.Integer, nullable=False)
     cards = db.Column(ARRAY(db.Unicode), nullable=False)

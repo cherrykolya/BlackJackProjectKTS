@@ -71,6 +71,10 @@ class BlackJackAccessor(BaseAccessor):
 
     async def set_table_cards(self, table_id: int, cards: list):
         await TableModel.update.values(deck=cards).where(TableModel.id == table_id).gino.all()
+
+    async def delete_table(self, table_id: int):
+        await TableModel.delete.where(TableModel.id == table_id).gino.all()
+    
     #async def get_player_cards(self, vk_id: int, table_id: int):
     #    player = await PlayerModel.query.where(and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)).gino.all()
 
@@ -93,6 +97,7 @@ class BlackJackAccessor(BaseAccessor):
             return table[0]
 
     async def set_table_state(self, table_id: int, state):
+        print(1)
         await TableModel.update.values(state=state).where(TableModel.id == table_id).gino.all()
         
     # async def create_theme(self, title: str) -> Theme:
