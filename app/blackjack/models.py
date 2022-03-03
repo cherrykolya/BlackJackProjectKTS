@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from app.store.database.gino import db
+from app.store.bot.deck import Deck
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import ARRAY
 
@@ -18,14 +19,14 @@ class Table:
     id: int # == peer_id, один стол в беседе
     peer_id: int
     created_at: str
-    deck: list
+    deck: Deck
     state: int
 
 @dataclass
 class Player:
     vk_id: int
     table_id: int
-    cards: list
+    cards: Deck
     state: int
     bet: float
     
@@ -46,7 +47,8 @@ class TableModel(db.Model):
     id = db.Column(db.Integer, nullable=False, primary_key=True)
     peer_id = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime(), server_default='now()')
-    deck = db.Column(ARRAY(db.Unicode), nullable=False)
+    deck = db.Column(db.PickleType, nullable=False)
+    #deck = db.Column(ARRAY(db.Unicode), nullable=False)
     state = db.Column(db.Unicode, nullable=False)
 
 class PlayerModel(db.Model):
@@ -54,7 +56,7 @@ class PlayerModel(db.Model):
 
     vk_id = db.Column(db.Integer, nullable=False)
     table_id = db.Column(db.Integer, db.ForeignKey("table.id", ondelete = 'CASCADE'), nullable=False)
-    cards = db.Column(ARRAY(db.Unicode), nullable=False)
+    cards = db.Column(db.PickleType, nullable=False)
     bet = db.Column(db.Float)
     state = db.Column(db.Unicode, nullable=False)
 

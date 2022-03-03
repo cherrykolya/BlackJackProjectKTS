@@ -1,9 +1,11 @@
 import typing
+import pickle
 from typing import Optional
 
 from app.base.base_accessor import BaseAccessor
 from app.blackjack.models import User, Player, Table, TableModel, UserModel, PlayerModel
 from app.store.database.gino import db
+from app.store.bot.deck import Deck
 from typing import List
 from asyncpg import ForeignKeyViolationError, NotNullViolationError
 from sqlalchemy import and_
@@ -13,22 +15,22 @@ if typing.TYPE_CHECKING:
     from app.web.app import Application
 
 class BlackJackAccessor(BaseAccessor):
-    # TODO: сделать фазу ставок
     # TODO: сделать очередность хода игроков
     # TODO: сделать таймер?
-    # TODO: добавить поле bet playerу
     async def create_player(self, player: Player):
         if await self.get_player_by_id(player.vk_id, player.table_id) is None:
             await PlayerModel.create(vk_id=player.vk_id, table_id=player.table_id,
-                                     cards=player.cards, state=player.state, bet = player.bet)
+                                     cards=pickle.dumps(player.cards),
+                                     state=player.state, bet = player.bet)
         else:
             pass
         
 
-    async def create_table(self, peer_id: int, deck: list, state: int):
+    async def create_table(self, peer_id: int, deck: Deck, state: int):
         # TODO: изменить состояния
         if await self.get_table_by_peer_id(peer_id) is None:
             tables = await TableModel.query.gino.all()
+            deck = pickle.dumps(deck)
             await TableModel.create(id=len(tables)+1,peer_id=peer_id, deck=deck, state=state)
         else:
             pass
@@ -53,10 +55,12 @@ class BlackJackAccessor(BaseAccessor):
         if len(player) == 0:
             return None
         if len(player) == 1:
-            return Player(player[0].vk_id, player[0].table_id, player[0].cards, player[0].state, player[0].bet)
+            return Player(player[0].vk_id, player[0].table_id, pickle.loads(player[0].cards), player[0].state, player[0].bet)
 
     async def get_players_on_table(self, table_id: int):
         players = await PlayerModel.query.where(PlayerModel.table_id == table_id).gino.all()
+        for i in range(len(players)):
+            players[i].cards = pickle.loads(players[i].cards)
         return players
 
     
@@ -67,7 +71,9 @@ class BlackJackAccessor(BaseAccessor):
         if len(table) == 0:
             return None
         if len(table) == 1:
-            return table[0]
+            table = table[0]
+            table.deck = pickle.loads(table.deck)
+            return table
 
     async def get_user_by_id(self, vk_id:int) -> Optional[User]:
         user = await UserModel.query.where(UserModel.vk_id == vk_id).gino.all()
@@ -76,15 +82,17 @@ class BlackJackAccessor(BaseAccessor):
         if len(user) == 1:
             return user[0]
 
-    async def set_player_cards(self, vk_id: int, table_id: int, cards: list):
+    async def set_player_cards(self, vk_id: int, table_id: int, cards: Deck):
         # modification here
+        cards = pickle.dumps(cards)
         await PlayerModel.update.values(cards=cards).where(and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)).gino.all()
 
     async def set_player_bet(self, vk_id: int, table_id: int, bet: float):
         # modification here
         await PlayerModel.update.values(bet=bet).where(and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)).gino.all()
 
-    async def set_table_cards(self, id: int, cards: list):
+    async def set_table_cards(self, id: int, cards: Deck):
+        cards = pickle.dumps(cards)
         await TableModel.update.values(deck=cards).where(TableModel.id == id).gino.all()
 
     async def delete_table(self, table_id: int):

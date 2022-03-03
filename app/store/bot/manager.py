@@ -1,5 +1,6 @@
 import typing
 import random
+import pickle
 from logging import getLogger
 
 from app.store.vk_api.dataclasses import Update, Message
@@ -22,9 +23,12 @@ class BotManager:
             current_table = await self.app.store.blackjack.get_table_by_peer_id(update.object.peer_id)
             #table_context = await self.app.store.blackjack.get_table_state(update.object.peer_id)
             if current_table is None:
-                await self.app.store.blackjack.create_table(peer_id=update.object.peer_id, deck = [], state=TableState.WAITING_REG.str)
+                deck = Deck()
+                deck.generate_deck()
+                deck.shuffle_deck()
+                await self.app.store.blackjack.create_table(peer_id=update.object.peer_id, deck = deck, state=TableState.WAITING_REG.str)
                 current_table = await self.app.store.blackjack.get_table_by_peer_id(update.object.peer_id)
-
+            
             table_state = TableState(current_table.state)
             # обработка нажатия на кнопку
             if update.type == 'message_event':
@@ -72,7 +76,7 @@ class BotManager:
         vk_id = update.object.user_id
         username = await self.app.store.vk_api.get_username(update.object.user_id)
         await self.app.store.blackjack.create_user(User(vk_id, username, str({}), 1000, 0))
-        await self.app.store.blackjack.create_player(Player(vk_id, current_table.id, [], PlayerState.REGISTERED.str, 0))
+        await self.app.store.blackjack.create_player(Player(vk_id, current_table.id, Deck(), PlayerState.REGISTERED.str, 0))
         event_data = {"type": "show_snackbar",
                       "text": "Вы зарегистрировались"}
         params = {"event_id": update.object.body['event_id'], "user_id":update.object.body['user_id'],
@@ -94,18 +98,18 @@ class BotManager:
             # Высылаем кнопки и сообщение о регистрации
             user = await self.app.store.blackjack.get_user_by_id(player.vk_id)
             text += f"{i+1}. @id{player.vk_id} ({user.username})\n"
-            cards = []
+            cards = Deck()
             
             # обрабатываем случай диллера
             if player.vk_id == 1:
                 for i in range(1):
-                    card = deck.pop()
-                    cards.append(card)
+                    card = deck.deck.pop()
+                    cards.deck.append(card)
                     text += f"📜 {card}\n"
             else:    
                 for i in range(2):
-                    card = deck.pop()
-                    cards.append(card)
+                    card = deck.deck.pop()
+                    cards.deck.append(card)
                     text += f"📜 {card}\n"
         
             # Добавляем выпавшие карты в БД игрока
@@ -168,9 +172,9 @@ class BotManager:
 
     async def handle_start_reg(self, update: Update, current_table):
         # создаем игровой стол и определяем в нем колоду-стек
-        deck = Deck()
+        #deck = Deck()
         await self.app.store.blackjack.set_table_state(id=current_table.id, state=TableState.START_REG.str)
-        await self.app.store.blackjack.set_table_cards(id=current_table.id, cards=deck.deck)
+        #await self.app.store.blackjack.set_table_cards(id=current_table.id, cards=deck.deck)
         button ={"color": "positive",
             "action":{  
             "type":"callback",
@@ -210,7 +214,7 @@ class BotManager:
         else:
             await self.app.store.blackjack.set_player_state(vk_id, peer_id, PlayerState.TURN_ENDED.str)
             user = await self.app.store.blackjack.get_user_by_id(player.vk_id)
-            cards = player.cards
+            cards = player.cards.deck
             text = f"Игрок @id{vk_id} ({user.username}) заврешил ход с картами:\n"
 
             for card in cards:
@@ -250,9 +254,9 @@ class BotManager:
             user = await self.app.store.blackjack.get_user_by_id(player.vk_id)
             text = f"Игрок @id{vk_id} ({user.username}) добрал карту:\n"
             cards = player.cards
-            card = deck.pop()
+            card = deck.deck.pop()
             text += f"📜 {card}\n"
-            cards.append(card)
+            cards.deck.append(card)
 
             await self.app.store.blackjack.set_player_cards(vk_id, peer_id, cards)
             await self.app.store.blackjack.set_table_cards(peer_id, deck)
@@ -272,7 +276,7 @@ class BotManager:
                         "peer_id": update.object.body['peer_id']}#, "event_data": event_data}
                 await self.app.store.vk_api.send_snackbar(params, event_data)
             # Если сумма карт больше 21, перевести игрока в состояние 2
-            card_values = [Deck().get_card_value(card) for card in cards]
+            card_values = [card.value for card in cards.deck]
             if sum(card_values) > 20:
                 await self.end_turn(update, current_table)
         
@@ -290,12 +294,12 @@ class BotManager:
         update.object.user_id = 1
         diler = await self.app.store.blackjack.get_player_by_id(1, peer_id)
         
-        while sum([Deck().get_card_value(card) for card in diler.cards]) < 14:
+        while sum([card.value for card in diler.cards.deck]) < 14:
             await self.draw_card(update, current_table)
             diler = await self.app.store.blackjack.get_player_by_id(1, peer_id)
         
         # высылаем сообщение о конце хода диллера
-        cards = diler.cards
+        cards = diler.cards.deck
         diler_user = await self.app.store.blackjack.get_user_by_id(1)
         text = f"Игрок @id{diler.vk_id} ({diler_user.username}) заврешил ход с картами:\n"
 
@@ -310,13 +314,13 @@ class BotManager:
                         ))
     
         # Подводим итоги матча
-        diler_sum = sum([Deck().get_card_value(card) for card in diler.cards])
+        diler_sum = sum([card.value for card in diler.cards.deck])
         players = await self.app.store.blackjack.get_players_on_table(peer_id)
         text = f"Все игроки завершили ход, результаты:\n"
         for i, player in enumerate(players):
             if player.vk_id != 1:
                 user = await self.app.store.blackjack.get_user_by_id(player.vk_id)
-                user_sum = sum([Deck().get_card_value(card) for card in player.cards])
+                user_sum = sum([card.value for card in player.cards.deck])
                 
                 # TODO: сделать сравнение с диллером
                 if user_sum > 21:
