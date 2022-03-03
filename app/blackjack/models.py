@@ -27,6 +27,7 @@ class Player:
     table_id: int
     cards: list
     state: int
+    bet: float
     
 
 # TODO: Написать модели user, player, gaming_table
@@ -54,7 +55,8 @@ class PlayerModel(db.Model):
     vk_id = db.Column(db.Integer, nullable=False)
     table_id = db.Column(db.Integer, db.ForeignKey("table.id", ondelete = 'CASCADE'), nullable=False)
     cards = db.Column(ARRAY(db.Unicode), nullable=False)
-    state = db.Column(db.Integer, nullable=False)
+    bet = db.Column(db.Float)
+    state = db.Column(db.Unicode, nullable=False)
 
 
 

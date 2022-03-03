@@ -13,13 +13,14 @@ if typing.TYPE_CHECKING:
     from app.web.app import Application
 
 class BlackJackAccessor(BaseAccessor):
-    # TODO: реализовать функции работы с БД
-    # TODO: обработать else сценарии
-    async def create_player(self, player: Player):# vk_id: int, table_id: int, cash: int=None, cards = [],num_of_wins: int=None, state: int = 0):
-        
+    # TODO: сделать фазу ставок
+    # TODO: сделать очередность хода игроков
+    # TODO: сделать таймер?
+    # TODO: добавить поле bet playerу
+    async def create_player(self, player: Player):
         if await self.get_player_by_id(player.vk_id, player.table_id) is None:
             await PlayerModel.create(vk_id=player.vk_id, table_id=player.table_id,
-                                     cards=player.cards, state=player.state)
+                                     cards=player.cards, state=player.state, bet = player.bet)
         else:
             pass
         
@@ -27,7 +28,7 @@ class BlackJackAccessor(BaseAccessor):
     async def create_table(self, peer_id: int, deck: list, state: int):
         # TODO: изменить состояния
         if await self.get_table_by_peer_id(peer_id) is None:
-            tables = await TableModel.query.where(TableModel.peer_id == peer_id).gino.all()
+            tables = await TableModel.query.gino.all()
             await TableModel.create(id=len(tables)+1,peer_id=peer_id, deck=deck, state=state)
         else:
             pass
@@ -52,7 +53,7 @@ class BlackJackAccessor(BaseAccessor):
         if len(player) == 0:
             return None
         if len(player) == 1:
-            return Player(player[0].vk_id, player[0].table_id, player[0].cards, player[0].state)
+            return Player(player[0].vk_id, player[0].table_id, player[0].cards, player[0].state, player[0].bet)
 
     async def get_players_on_table(self, table_id: int):
         players = await PlayerModel.query.where(PlayerModel.table_id == table_id).gino.all()
@@ -79,6 +80,10 @@ class BlackJackAccessor(BaseAccessor):
         # modification here
         await PlayerModel.update.values(cards=cards).where(and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)).gino.all()
 
+    async def set_player_bet(self, vk_id: int, table_id: int, bet: float):
+        # modification here
+        await PlayerModel.update.values(bet=bet).where(and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)).gino.all()
+
     async def set_table_cards(self, id: int, cards: list):
         await TableModel.update.values(deck=cards).where(TableModel.id == id).gino.all()
 
@@ -99,7 +104,7 @@ class BlackJackAccessor(BaseAccessor):
         player = await self.get_player_by_id(vk_id, table_id)
         return player.state
 
-    async def set_player_state(self, vk_id: int, table_id: int, state: int):
+    async def set_player_state(self, vk_id: int, table_id: int, state: str):
         # modification here
         await PlayerModel.update.values(state=state).where(and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)).gino.all()
 

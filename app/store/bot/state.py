@@ -1,7 +1,7 @@
 import typing
 from enum import Enum, EnumMeta
 
-
+# СОСТОЯНИЯ СТОЛА
 class TableEnumMeta(EnumMeta):
     def __call__(cls, value, *args, **kw):
         if isinstance(value, str):
@@ -14,6 +14,12 @@ class TableEnumMeta(EnumMeta):
                         'next_state': ['/stop_reg'],},
                      '/stop_reg': {
                         'str': "/stop_reg",
+                        'next_state': ['/start_bets'],},
+                     '/start_bets': {
+                        'str': "/start_bets",
+                        'next_state': ['/stop_bets'],},
+                     '/stop_bets': {
+                        'str': "/stop_bets",
                         'next_state': ['/start_game'],},
                      '/start_game': {
                         'str': '/start_game',
@@ -29,13 +35,20 @@ class TableState(Enum, metaclass=TableEnumMeta):
         'str': "/waiting_reg",
         'next_state': ['/start_reg'],
     }
-
     START_REG = {
         'str': "/start_reg",
         'next_state': ['/stop_reg'],
     }
     STOP_REG = {
         'str': "/stop_reg",
+        'next_state': ['/start_bets'],
+    }
+    START_BETS = {
+        'str': "/start_bets",
+        'next_state': ['/stop_bets'],
+    }
+    STOP_BETS = {
+        'str': "/stop_bets",
         'next_state': ['/start_game'],
     }
     START_GAME = {
@@ -44,6 +57,61 @@ class TableState(Enum, metaclass=TableEnumMeta):
     }
     END_GAME = {
         'str': '/end_game',
+        'next_state': [],
+    }
+
+    def __init__(self, vals):
+        self.str = vals['str']
+        self.next_state = vals['next_state']
+    
+
+    def can_transition(self, new_state):
+        return new_state.str in self.next_state
+
+# СОСТОЯНИЯ ИГРОКА
+
+class PlayerEnumMeta(EnumMeta):
+    def __call__(cls, value, *args, **kw):
+        if isinstance(value, str):
+            # map strings to enum values, defaults to Unknown
+            value = {
+                     '/registered': {
+                        'str': "/registered",
+                        'next_state': ['/placing_bet'],},
+                     '/placing_bet': {
+                        'str': "/placing_bet",
+                        'next_state': ['/placed_bet'],},
+                     '/placed_bet': {
+                        'str': '/placed_bet',
+                        'next_state': ['/turn_active'],},
+                     '/turn_active': {
+                        'str': '/turn_active',
+                        'next_state': ['/turn_ended'],},
+                     '/turn_ended': {
+                        'str': '/turn_ended',
+                        'next_state': [],}}.get(value, 0)
+        return super().__call__(value, *args, **kw)
+    
+class PlayerState(Enum, metaclass=PlayerEnumMeta):
+
+    REGISTERED = {
+        'str': "/registered",
+        'next_state': ['/placing_bet'],
+    }
+    PLACING_BET = {
+        'str': "/placing_bet",
+        'next_state': ['/placed_bet'],
+    }
+    PLACED_BET = {
+        'str': '/placed_bet',
+        'next_state': ['/turn_active'],
+    }
+    TURN_ACTIVE = {
+        'str': '/turn_active',
+        'next_state': ['/turn_ended'],
+    }
+    TURN_ENDED = {
+        'str': '/turn_ended',
         'next_state': [],
     }
 
