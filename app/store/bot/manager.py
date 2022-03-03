@@ -71,7 +71,7 @@ class BotManager:
                             TableState.STOP_BETS: self.handle_stop_bets,
                             TableState.START_GAME: self.handle_start_game,
                             TableState.INFO: self.handle_info,
-                            TableState.END_GAME: None,}
+                            TableState.END_GAME: self.handle_end_game,}
         return function_to_call[table_state]
 
     async def check_state(self, command: str, table_state: TableState) -> bool:
@@ -82,6 +82,18 @@ class BotManager:
         text = f"Статистика пользователя @id{user.vk_id} ({user.username})\n"
         text += f"Победы: {user.num_of_wins} 🏆\n"
         text += f"Банк: {user.cash} 💵\n"
+        await self.app.store.vk_api.send_message(
+                        Message(
+                            user_id=update.object.user_id,
+                            text=text,#update.object.body,
+                            peer_id = update.object.peer_id
+                        ),)
+    async def handle_end_game(self, update: Update, current_table: Table):
+        # Изменяем состояние игрового стола
+        await self.app.store.blackjack.set_table_state(current_table.id, TableState.END_GAME.str)
+        user = await self.app.store.blackjack.get_user_by_id(update.object.user_id)
+        text = f"Игрок @id{user.vk_id} ({user.username}) досрочно завершил матч!\n"
+        # высылаем уведомление об окончании игры
         await self.app.store.vk_api.send_message(
                         Message(
                             user_id=update.object.user_id,
