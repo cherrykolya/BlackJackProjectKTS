@@ -6,24 +6,27 @@ class TableEnumMeta(EnumMeta):
     def __call__(cls, value, *args, **kw):
         if isinstance(value, str):
             # map strings to enum values, defaults to Unknown
-            value = {'/waiting_reg': {
+            value = {'/info': {
+                        'str': "/info",
+                        'next_state': [], },
+                     '/waiting_reg': {
                         'str': "/waiting_reg",
-                        'next_state': ['/start_reg'],}, 
+                        'next_state': ['/start_reg', '/info'],}, 
                      '/start_reg': {
                         'str': "/start_reg",
-                        'next_state': ['/stop_reg'],},
+                        'next_state': ['/stop_reg', '/info'],},
                      '/stop_reg': {
                         'str': "/stop_reg",
-                        'next_state': ['/start_bets'],},
+                        'next_state': ['/start_bets', '/info'],},
                      '/start_bets': {
                         'str': "/start_bets",
-                        'next_state': ['/stop_bets'],},
+                        'next_state': ['/stop_bets', '/info'],},
                      '/stop_bets': {
                         'str': "/stop_bets",
-                        'next_state': ['/start_game'],},
+                        'next_state': ['/start_game', '/info'],},
                      '/start_game': {
                         'str': '/start_game',
-                        'next_state': ['/end_game'],},
+                        'next_state': ['/end_game', '/info'],},
                      '/end_game': {
                         'str': '/end_game',
                         'next_state': [],}}.get(value, 0)
@@ -33,32 +36,39 @@ class TableState(Enum, metaclass=TableEnumMeta):
 
     WAITING_REG = {
         'str': "/waiting_reg",
-        'next_state': ['/start_reg'],
+        'next_state': ['/start_reg', '/info'],
     }
     START_REG = {
         'str': "/start_reg",
-        'next_state': ['/stop_reg'],
+        'next_state': ['/stop_reg', '/info'],
     }
     STOP_REG = {
         'str': "/stop_reg",
-        'next_state': ['/start_bets'],
+        'next_state': ['/start_bets', '/info'],
     }
     START_BETS = {
         'str': "/start_bets",
-        'next_state': ['/stop_bets'],
+        'next_state': ['/stop_bets', '/info'],
     }
     STOP_BETS = {
         'str': "/stop_bets",
-        'next_state': ['/start_game'],
+        'next_state': ['/start_game', '/info'],
     }
     START_GAME = {
         'str': '/start_game',
-        'next_state': ['/end_game'],
+        'next_state': ['/end_game', '/info'],
     }
     END_GAME = {
         'str': '/end_game',
         'next_state': [],
     }
+
+    # UTILS STATES
+    INFO = {
+        'str': '/info',
+        'next_state': [],
+    }
+
 
     def __init__(self, vals):
         self.str = vals['str']

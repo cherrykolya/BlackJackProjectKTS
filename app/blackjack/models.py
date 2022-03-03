@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-
+from datetime import datetime
 from app.store.database.gino import db
 from app.store.bot.deck import Deck
 from sqlalchemy.dialects.postgresql import JSONB
@@ -18,7 +18,7 @@ class User:
 class Table:
     id: int # == peer_id, один стол в беседе
     peer_id: int
-    created_at: str
+    created_at: datetime
     deck: Deck
     state: int
 

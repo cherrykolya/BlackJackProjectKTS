@@ -72,15 +72,14 @@ class BlackJackAccessor(BaseAccessor):
             return None
         if len(table) == 1:
             table = table[0]
-            table.deck = pickle.loads(table.deck)
-            return table
+            return Table(table.id, table.peer_id, table.created_at, pickle.loads(table.deck), table.state)
 
     async def get_user_by_id(self, vk_id:int) -> Optional[User]:
         user = await UserModel.query.where(UserModel.vk_id == vk_id).gino.all()
         if len(user) == 0:
             return None
         if len(user) == 1:
-            return user[0]
+            return User(user[0].vk_id, user[0].username, user[0].info, user[0].cash, user[0].num_of_wins)
 
     async def set_player_cards(self, vk_id: int, table_id: int, cards: Deck):
         # modification here
