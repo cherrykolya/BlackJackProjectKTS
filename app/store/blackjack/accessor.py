@@ -32,7 +32,7 @@ class BlackJackAccessor(BaseAccessor):
         if await self.get_table_by_peer_id(peer_id) is None:
             tables = await TableModel.query.gino.all()
             deck = pickle.dumps(deck)
-            await TableModel.create(id=len(tables)+1,peer_id=peer_id,players_queue=[], deck=deck, state=state)
+            await TableModel.create(id=len(tables)+1,peer_id=peer_id, deck=deck, state=state)
         else:
             pass
 
@@ -82,7 +82,7 @@ class BlackJackAccessor(BaseAccessor):
             return None
         if len(table) == 1:
             table = table[0]
-            return Table(table.id, table.peer_id, table.created_at, pickle.loads(table.deck), table.state,table.players_queue)
+            return Table(table.id, table.peer_id, table.created_at, pickle.loads(table.deck), table.state)
 
     async def get_user_by_id(self, vk_id:int) -> Optional[User]:
         user = await UserModel.query.where(UserModel.vk_id == vk_id).gino.all()
@@ -103,9 +103,6 @@ class BlackJackAccessor(BaseAccessor):
     async def set_table_cards(self, id: int, cards: Deck):
         cards = pickle.dumps(cards)
         await TableModel.update.values(deck=cards).where(TableModel.id == id).gino.all()
-
-    async def set_table_queue(self, id: int, queue: list):
-        await TableModel.update.values(players_queue=queue).where(TableModel.id == id).gino.all()
 
     async def delete_table(self, table_id: int):
         await TableModel.delete.where(TableModel.id == table_id).gino.all()

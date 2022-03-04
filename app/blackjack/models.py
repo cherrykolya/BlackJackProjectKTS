@@ -21,7 +21,6 @@ class Table:
     created_at: datetime
     deck: Deck
     state: int
-    players_queue: list
 
 @dataclass
 class Player:
@@ -49,8 +48,6 @@ class TableModel(db.Model):
     peer_id = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime(), server_default='now()')
     deck = db.Column(db.PickleType, nullable=False)
-    # добавлено
-    players_queue = db.Column(ARRAY(db.Integer), nullable=False)
     state = db.Column(db.Unicode, nullable=False)
 
 class PlayerModel(db.Model):

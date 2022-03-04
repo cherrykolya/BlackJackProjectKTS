@@ -117,6 +117,108 @@ class PlayerState(Enum, metaclass=PlayerEnumMeta):
     def can_transition(self, new_state):
         return new_state.str in self.next_state
 
+# КНОПКИ
+class Buttons(Enum):
+
+    # TEXT BUTTONS
+    START_REG = {"color": "positive",
+            "action":{  
+            "type":"text",
+            "payload":{"button":"/start_reg"},
+            "label":"Начать регистрацию"}
+            }
+
+    STOP_REG = {"color": "negative",
+            "action":{  
+            "type":"text",
+            "payload":{"button":"/stop_reg"},
+            "label":"Закончить регистрацию"}
+            }
+    
+    START_BETS = {"color": "positive",
+            "action":{  
+            "type":"text",
+            "payload":{"button":"/start_bets"},
+            "label":"Сделать ставки"}
+            }
+    
+    STOP_BETS = {"color": "positive",
+            "action":{  
+            "type":"text",
+            "payload":{"button":"/stop_bets"},
+            "label":"/stop_bets"}
+            }
+
+    START_GAME = {"color": "positive",
+            "action":{  
+            "type":"text",
+            "payload":{"button":"/start_game"},
+            "label":"Раздать карты"}
+            }
+
+    END_GAME = {"color": "secondary",
+            "action":{  
+            "type":"text",
+            "payload":{"button":"/end_game"},
+            "label":"Прервать игру"}
+            }
+
+    INFO = {"color": "secondary",
+            "action":{  
+            "type":"text",
+            "payload":{"button":"/info"},
+            "label":"Моя статистика"}
+            }
+
+    # CALLBACK BUTTONS
+    REG_USER = {"color": "positive",
+            "action":{  
+            "type":"callback",
+            "payload":{"button":"reg"},
+            "label":"Сесть за стол"}
+                }
+
+    ADD_CARD ={"color": "positive",
+            "action":{  
+            "type":"callback",
+            "payload":{"button":"add_card"},
+            "label":"Добрать карту"}
+                }
+
+    END_TURN ={"color": "negative",
+            "action":{  
+            "type":"callback",
+            "payload":{"button":"end_turn"},
+            "label":"Завершить ход"}
+                }
+    
+    BET_1 = {"color": "positive",
+            "action":{  
+            "type":"callback",
+            "payload":{"button":"bet",
+                       "bet": 0.25},
+            "label":"25%"}}
+
+    BET_2 = {"color": "positive",
+            "action":{  
+            "type":"callback",
+            "payload":{"button":"bet",
+                       "bet": 0.5},
+            "label":"50%"}}
+            
+    BET_3 = {"color": "positive",
+            "action":{  
+            "type":"callback",
+            "payload":{"button":"bet",
+                       "bet": 0.75},
+            "label":"75%"}}
+        
+    BET_4 = {"color": "positive",
+            "action":{  
+            "type":"callback",
+            "payload":{"button":"bet",
+                       "bet": 1},
+            "label":"100%"}}
 
 # how to use
 #print('Name:', BugStatus.START_REG)
