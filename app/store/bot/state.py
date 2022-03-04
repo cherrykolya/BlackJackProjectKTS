@@ -83,14 +83,8 @@ class PlayerEnumMeta(EnumMeta):
         if isinstance(value, str):
             # map strings to enum values, defaults to Unknown
             value = {
-                     '/registered': {
-                        'str': "/registered",
-                        'next_state': ['/placing_bet'],},
-                     '/placing_bet': {
-                        'str': "/placing_bet",
-                        'next_state': ['/placed_bet'],},
-                     '/placed_bet': {
-                        'str': '/placed_bet',
+                     '/waiting_turn': {
+                        'str': "/waiting_turn",
                         'next_state': ['/turn_active'],},
                      '/turn_active': {
                         'str': '/turn_active',
@@ -102,16 +96,8 @@ class PlayerEnumMeta(EnumMeta):
     
 class PlayerState(Enum, metaclass=PlayerEnumMeta):
 
-    REGISTERED = {
-        'str': "/registered",
-        'next_state': ['/placing_bet'],
-    }
-    PLACING_BET = {
-        'str': "/placing_bet",
-        'next_state': ['/placed_bet'],
-    }
-    PLACED_BET = {
-        'str': '/placed_bet',
+    WAITING_TURN = {
+        'str': "/waiting_turn",
         'next_state': ['/turn_active'],
     }
     TURN_ACTIVE = {

@@ -6,6 +6,7 @@ from app.base.base_accessor import BaseAccessor
 from app.blackjack.models import User, Player, Table, TableModel, UserModel, PlayerModel
 from app.store.database.gino import db
 from app.store.bot.deck import Deck
+from app.store.bot.state import PlayerState
 from typing import List
 from asyncpg import ForeignKeyViolationError, NotNullViolationError
 from sqlalchemy import and_
@@ -31,7 +32,7 @@ class BlackJackAccessor(BaseAccessor):
         if await self.get_table_by_peer_id(peer_id) is None:
             tables = await TableModel.query.gino.all()
             deck = pickle.dumps(deck)
-            await TableModel.create(id=len(tables)+1,peer_id=peer_id, deck=deck, state=state)
+            await TableModel.create(id=len(tables)+1,peer_id=peer_id,players_queue=[], deck=deck, state=state)
         else:
             pass
 
@@ -63,6 +64,15 @@ class BlackJackAccessor(BaseAccessor):
             players[i].cards = pickle.loads(players[i].cards)
         return players
 
+    async def get_next_waiting_player(self, table_id: int):
+        players = await PlayerModel.query.where(and_(PlayerModel.table_id == table_id, PlayerModel.state == PlayerState.WAITING_TURN.str)).gino.all()
+        if len(players) == 0:
+            return None
+        else:
+            player = players[0]
+            player.cards = pickle.loads(player.cards)
+            return player
+
     
     async def get_table_by_peer_id(self, id_:int) -> Optional[Table]:
         # Находим незавершенный стол в беседе peer_id
@@ -72,7 +82,7 @@ class BlackJackAccessor(BaseAccessor):
             return None
         if len(table) == 1:
             table = table[0]
-            return Table(table.id, table.peer_id, table.created_at, pickle.loads(table.deck), table.state)
+            return Table(table.id, table.peer_id, table.created_at, pickle.loads(table.deck), table.state,table.players_queue)
 
     async def get_user_by_id(self, vk_id:int) -> Optional[User]:
         user = await UserModel.query.where(UserModel.vk_id == vk_id).gino.all()
@@ -93,6 +103,9 @@ class BlackJackAccessor(BaseAccessor):
     async def set_table_cards(self, id: int, cards: Deck):
         cards = pickle.dumps(cards)
         await TableModel.update.values(deck=cards).where(TableModel.id == id).gino.all()
+
+    async def set_table_queue(self, id: int, queue: list):
+        await TableModel.update.values(players_queue=queue).where(TableModel.id == id).gino.all()
 
     async def delete_table(self, table_id: int):
         await TableModel.delete.where(TableModel.id == table_id).gino.all()
