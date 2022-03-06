@@ -16,9 +16,9 @@ if typing.TYPE_CHECKING:
     from app.web.app import Application
 
 class BlackJackAccessor(BaseAccessor):
-    # TODO: сделать очередность хода игроков
-    # TODO: сделать таймер?
+
     async def create_player(self, player: Player):
+        """Создает игрока в БД"""
         if await self.get_player_by_id(player.vk_id, player.table_id) is None:
             await PlayerModel.create(vk_id=player.vk_id, table_id=player.table_id,
                                      cards=pickle.dumps(player.cards),
@@ -28,7 +28,8 @@ class BlackJackAccessor(BaseAccessor):
         
 
     async def create_table(self, peer_id: int, deck: Deck, state: int):
-        # TODO: изменить состояния
+        # TODO: изменить входные параметры на Table
+        """Создает стол в БД"""
         if await self.get_table_by_peer_id(peer_id) is None:
             tables = await TableModel.query.gino.all()
             deck = pickle.dumps(deck)
@@ -36,7 +37,8 @@ class BlackJackAccessor(BaseAccessor):
         else:
             pass
 
-    async def create_user(self, user: User):# vk_id: int, username: str, info: dict):
+    async def create_user(self, user: User):
+        """Создает пользователя в БД"""
         if await self.get_user_by_id(user.vk_id) is None:
             await UserModel.create(vk_id=user.vk_id,
                                    username=user.username,
@@ -75,8 +77,7 @@ class BlackJackAccessor(BaseAccessor):
 
     
     async def get_table_by_peer_id(self, id_:int) -> Optional[Table]:
-        # Находим незавершенный стол в беседе peer_id
-        #table = await TableModel.query.where(TableModel.id == id_)).gino.all()
+        # Находим незавершенный стол с таким айди, если он сущесвтует
         table = await TableModel.query.where(and_(TableModel.peer_id == id_, TableModel.state != '/end_game')).gino.all()
         if len(table) == 0:
             return None
@@ -111,12 +112,7 @@ class BlackJackAccessor(BaseAccessor):
         user = await self.get_user_by_id(vk_id)
         await UserModel.update.values(cash=user.cash + cash).where(UserModel.vk_id == vk_id).gino.all()
     
-    #async def get_player_cards(self, vk_id: int, table_id: int):
-    #    player = await PlayerModel.query.where(and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)).gino.all()
-
-
-    
-    # TODO: Эта часть работает как стейт ацессор 
+    # Эта часть работает как стейт ацессор 
     async def get_player_state(self, vk_id: int, table_id: int) -> int:
         player = await self.get_player_by_id(vk_id, table_id)
         return player.state
