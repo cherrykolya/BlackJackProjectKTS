@@ -3,7 +3,7 @@ import json
 
 from logging import getLogger
 from datetime import datetime
-from app.store.vk_api.dataclasses import Update, Message
+from app.store.vk_api.dataclasses import Update, Message, UpdateObject
 from app.blackjack.models import User, Player, Table
 from app.store.bot.state import TableState, PlayerState, Buttons, CallbackButtons
 from app.store.bot.deck import Deck
@@ -21,58 +21,23 @@ class BotManager:
     async def handle_updates(self, updates: list[Update]):
         # TODO: декоратор для проверки нажатия кнопок игроком, не участвующим в матче
         # TODO: вставить в декоратор обработку снэкбара
-        # TODO: Переделать колоду в json
         # TODO: Вынести логику из handle_updates
         # TODO: Посмотреть на функции больше чем 20 строк, вынести из них логику
-        # TODO: Пересмотреть логику в models.py
-        # TODO:
+        # TODO: Пересмотреть логику в dataclasses.py
         # TODO: добавить таймер
         for update in updates:
-            current_table = await self.app.store.blackjack.get_table_by_peer_id(update.object.peer_id)
+            current_table = await self.app.store.blackjack.get_table_by_peer_id(update.peer_id)
             if current_table is None:
-                deck = Deck()
-                deck.generate_deck()
-                deck.shuffle_deck()
-                deck = [card.to_dict() for card in deck.deck]
-                table = Table(0,update.object.peer_id, datetime.now(), deck, TableState.WAITING_REG.str)
-                await self.app.store.blackjack.create_table(table)
-                current_table = await self.app.store.blackjack.get_table_by_peer_id(update.object.peer_id)
+                current_table = await self.create_table(update.peer_id)
             
-            table_state = TableState(current_table.state)
             # обработка нажатия на callback кнопку
             if update.type == 'message_event':
-                if "payload" in update.object.body.keys(): 
-                     command = update.object.body["payload"]["button"]
-                update_handler = await self.button_response_handler(CallbackButtons(command))
-                await update_handler(update=update, 
-                                     current_table=current_table)
+                await self.process_callback_button_pressed(update, current_table)
                 
             # обработка команды из чата
             if update.type == 'message_new':
-                command = update.object.body["text"]
-                if "payload" in update.object.body.keys(): 
-                    command = json.loads(update.object.body["payload"])["button"]
-                if await self.check_state(command, table_state):
-                    keyboard = {  
-                        "one_time": False,
-                        "inline": False, 
-                        "buttons": await self.button_sender(TableState(command))}
-                    update_handler = await self.context_manager(TableState(command))
-                    await update_handler(update=update, 
-                                         current_table=current_table, 
-                                         keyboard=keyboard)
+                await self.process_new_command(update, current_table)
 
-                # TODO: обработка неправильной комманды от пользователя
-                elif len(command) > 0 and command[0] == "/":
-                    text = f"Доступны следующие команды:\n"
-                    for i, state in  enumerate(table_state.next_state):
-                        text += f"{i+1}. {state}\n"
-                    await self.app.store.vk_api.send_message(
-                        Message(
-                            user_id=update.object.user_id,
-                            text=text,#update.object.body,
-                            peer_id = update.object.peer_id
-                        ))
 
     async def button_response_handler(self, response_button: CallbackButtons):
         button_handler = { CallbackButtons.REG: self.handle_registration,
@@ -118,50 +83,84 @@ class BotManager:
                             TableState.END_GAME: self.handle_end_game,}
         return function_to_call[table_state]
 
+    async def process_new_command(self, update: Update, current_table: Table):
+        command = update.text
+        
+        if update.payload:
+            command = json.loads(update.payload)["button"]
+
+        if await self.check_state(command, TableState(current_table.state)):
+            keyboard = await self.keyboard_constructor(command)
+            update_handler = await self.context_manager(TableState(command))
+            await update_handler(update=update, 
+                                 current_table=current_table, 
+                                 keyboard=keyboard)
+
+        # TODO: обработка неправильной команды от пользователя
+        elif len(command) > 0 and command[0] == "/":
+            text = f"Доступны следующие команды:\n"
+            for i, state in  enumerate(TableState(current_table.state).next_state):
+                text += f"{i+1}. {state}\n"
+            await self.send_message(update, text)
+
+
+    async def process_callback_button_pressed(self, update: Update, current_table: Table):
+        if update.payload: 
+            command = update.payload["button"]
+        update_handler = await self.button_response_handler(CallbackButtons(command))
+        await update_handler(update=update, current_table=current_table)
+
+
+    async def create_table(self, peer_id: int) -> Table:
+        deck = Deck()
+        deck.generate_deck()
+        deck.shuffle_deck()
+        deck = [card.to_dict() for card in deck.deck]
+        table = Table(0,peer_id, datetime.now(), deck, TableState.WAITING_REG.str)
+        await self.app.store.blackjack.create_table(table)
+        return await self.app.store.blackjack.get_table_by_peer_id(peer_id)
+        
+
     def player_checker(func):
         async def wrapper(self, *args, **kwargs):
             update, current_table = kwargs['update'], kwargs['current_table']
-            current_player = await self.app.store.blackjack.get_player_by_id(update.object.user_id,current_table.id)
+            current_player = await self.app.store.blackjack.get_player_by_id(update.user_id,current_table.id)
             if current_player is not None:
                 await func(self, *args, **kwargs)
+            elif update.type == 'message_event':
+                text = "Вы не в игре!"
+                event_data, params = await self.snackbar_params_constructor(update, text)
+                await self.app.store.vk_api.send_snackbar(params, event_data)
         return wrapper
 
     async def check_state(self, command: str, table_state: TableState) -> bool:
         return command in table_state.next_state
 
     async def handle_info(self, update: Update, current_table: Table, keyboard):
-        user = await self.app.store.blackjack.get_user_by_id(update.object.user_id)
+        user = await self.app.store.blackjack.get_user_by_id(update.user_id)
         text = f"Статистика пользователя @id{user.vk_id} ({user.username})\n"
         text += f"Победы: {user.num_of_wins} 🏆\n"
         text += f"Банк: {user.cash} 💵\n"
-        await self.app.store.vk_api.send_message(
-                        Message(
-                            user_id=update.object.user_id,
-                            text=text,#update.object.body,
-                            peer_id = update.object.peer_id
-                        ),)
+
+        await self.send_message(update, text)
+
 
     @player_checker
     async def handle_end_game(self, update: Update, current_table: Table, keyboard):
         # Изменяем состояние игрового стола
         await self.app.store.blackjack.set_table_state(current_table.id, TableState.END_GAME.str)
-        user = await self.app.store.blackjack.get_user_by_id(update.object.user_id)
+        user = await self.app.store.blackjack.get_user_by_id(update.user_id)
         text = f"Игрок @id{user.vk_id} ({user.username}) досрочно завершил матч!\n"
 
         # высылаем уведомление об окончании игры
-        await self.app.store.vk_api.send_message(
-                        Message(
-                            user_id=update.object.user_id,
-                            text=text,#update.object.body,
-                            peer_id = update.object.peer_id
-                        ),keyboard=keyboard)
+        await self.send_message(update, text, keyboard)
 
 
     async def handle_registration(self, update: Update, current_table: Table):
-        vk_id = update.object.user_id
+        vk_id = update.user_id
         # Проверяем зарегистрировался ли уже игрок
         if await self.app.store.blackjack.get_player_by_id(vk_id, current_table.id) is None:
-            username = await self.app.store.vk_api.get_username(update.object.user_id)
+            username = await self.app.store.vk_api.get_username(update.user_id)
             await self.app.store.blackjack.create_user(User(vk_id, username, str({}), 1000, 0))
             await self.app.store.blackjack.create_player(Player(vk_id, current_table.id, [], PlayerState.WAITING_TURN.str, 0))
             
@@ -169,13 +168,8 @@ class BotManager:
             text = "Вы зарегистрировались!"
             event_data, params = await self.snackbar_params_constructor(update, text)
             await self.app.store.vk_api.send_snackbar(params, event_data)
-
-            await self.app.store.vk_api.send_message(
-                            Message(
-                                user_id=update.object.user_id,
-                                text=f"@id{vk_id} ({username}) садится за стол!\n",
-                                peer_id = update.object.peer_id
-                            ),)
+            text=f"@id{vk_id} ({username}) садится за стол!\n"
+            await self.send_message(update, text)
         else:
             # высылаем снэкбар и сообщение о регистрации
             text = "Вы уже зарегистрировались!"
@@ -224,25 +218,17 @@ class BotManager:
         user = await self.app.store.blackjack.get_user_by_id(player.vk_id)
         text += f"Ход игрока @id{user.vk_id} ({user.username}) !"
 
-        await self.app.store.vk_api.send_message(
-                        Message(
-                            user_id=update.object.user_id,
-                            text=text,#update.object.body,
-                            peer_id = update.object.peer_id
-                        ), keyboard=keyboard)
+        await self.send_message(update, text, keyboard)
+
 
     @player_checker
     async def handle_stop_reg(self, update: Update, current_table: Table, keyboard):
         # TODO: обработать кейс когда никто не зарегистрировался
         players = await self.app.store.blackjack.get_players_on_table(current_table.id)
         if len(players) == 0:
-            text = "Никто не зарегистрировался, регистрация продолжается!\n" 
-            await self.app.store.vk_api.send_message(
-                            Message(
-                                user_id=update.object.user_id,
-                                text=text,#update.object.body,
-                                peer_id = update.object.peer_id
-                            ),)
+            text = "Никто не зарегистрировался, регистрация продолжается!\n"
+            await self.send_message(update, text)
+
         else:
             # Изменяем состояние игрового стола
             await self.app.store.blackjack.set_table_state(current_table.id, TableState.STOP_REG.str)
@@ -256,31 +242,20 @@ class BotManager:
             for i, player in enumerate(players):
                 user = await self.app.store.blackjack.get_user_by_id(player.vk_id)
                 text += f"{i+1}. @id{player.vk_id} ({user.username})\n"
-
-            await self.app.store.vk_api.send_message(
-                            Message(
-                                user_id=update.object.user_id,
-                                text=text,#update.object.body,
-                                peer_id = update.object.peer_id
-                            ),
-                            keyboard = keyboard)
+            
+            await self.send_message(update, text, keyboard)
 
     async def handle_start_reg(self, update: Update, current_table: Table, keyboard):
         # создаем игровой стол и определяем в нем колоду-стек
         #deck = Deck()
         await self.app.store.blackjack.set_table_state(id=current_table.id, state=TableState.START_REG.str)
-        await self.app.store.vk_api.send_message(
-                Message(
-                    user_id=1,
-                    text="Привет, Сыграем в BlackJack?",
-                    peer_id = update.object.peer_id
-                ),
-                keyboard=keyboard)
+        text = "Сыграем в BlackJack?"
+        await self.send_message(update, text, keyboard)
 
     @player_checker
     async def end_turn(self, update: Update, current_table: Table):
         # получаем текущего игрока
-        vk_id = update.object.user_id
+        vk_id = update.user_id
         peer_id = current_table.id
         player = await self.app.store.blackjack.get_player_by_id(vk_id, peer_id)
 
@@ -301,12 +276,7 @@ class BotManager:
                 next_user = await self.app.store.blackjack.get_user_by_id(next_player.vk_id)
                 text += f"Ход игрока @id{next_user.vk_id} ({next_user.username}) !"
 
-            await self.app.store.vk_api.send_message(
-                            Message(
-                                user_id=update.object.user_id,
-                                text=text,#update.object.body,
-                                peer_id = update.object.peer_id
-                            ))   
+            await self.send_message(update, text)
 
             # Высылаем snackbar о конце ход
             text = "Ваш ход окончен!"
@@ -333,7 +303,7 @@ class BotManager:
         
     @player_checker
     async def draw_card(self, update: Update, current_table: Table):
-        vk_id = update.object.user_id
+        vk_id = update.user_id
         peer_id = current_table.id
 
         # Получаем текущую колоду-стек
@@ -354,13 +324,8 @@ class BotManager:
             # обновляем колоду игркоа и стола в БД
             await self.app.store.blackjack.set_player_cards(vk_id, peer_id, cards)
             await self.app.store.blackjack.set_table_cards(peer_id, deck)
-
-            await self.app.store.vk_api.send_message(
-                            Message(
-                                user_id=update.object.user_id,
-                                text=text,#update.object.body,
-                                peer_id = update.object.peer_id
-                            ))
+            
+            await self.send_message(update, text)
             
             # Высылаем snackbar о доборе карты
             if vk_id != 1:
@@ -387,11 +352,13 @@ class BotManager:
 
     async def summarize(self, update: Update, current_table: Table):
         peer_id = current_table.id
-        update.object.user_id = 1
         diler = await self.app.store.blackjack.get_player_by_id(1, peer_id)
         
+        # КОСТЫЛЬ
+        diler_update = Update('',UpdateObject(0, Message(1, peer_id, '', None, None)))
+        
         while sum([card.value for card in diler.cards]) < 14:
-            await self.draw_card(update=update, current_table=current_table)
+            await self.draw_card(update=diler_update, current_table=current_table)
             diler = await self.app.store.blackjack.get_player_by_id(1, peer_id)
         
         # высылаем сообщение о конце хода диллера
@@ -401,13 +368,9 @@ class BotManager:
 
         for card in cards:
                 text += f"📜 {card}\n"
+                
+        await self.send_message(update, text)
 
-        await self.app.store.vk_api.send_message(
-                        Message(
-                            user_id=update.object.user_id,
-                            text=text,#update.object.body,
-                            peer_id = update.object.peer_id
-                        ))
     
         # Подводим итоги матча
         diler_sum = sum([card.value for card in diler.cards])
@@ -447,17 +410,9 @@ class BotManager:
         # переводим стол в конечное состояние
         await self.app.store.blackjack.set_table_state(peer_id, TableState.END_GAME.str)
         
-        keyboard = {  
-                    "one_time": False,
-                    "inline": False, 
-                    "buttons": await self.button_sender(TableState.END_GAME)}
-        await self.app.store.vk_api.send_message(
-                Message(
-                    user_id=1,
-                    text=text,
-                    peer_id = update.object.peer_id
-                ),
-                keyboard=keyboard)
+        keyboard = await self.keyboard_constructor(TableState.END_GAME.str)
+        await self.send_message(update, text, keyboard)
+
 
     async def check_all_players_state(self, players : list[Player], state: PlayerState) -> bool:
         flag = True
@@ -469,14 +424,14 @@ class BotManager:
     @player_checker
     async def register_bets(self, update: Update, current_table: Table, keyboard=None):
         # получаем текущего игрока
-        vk_id = update.object.user_id
+        vk_id = update.user_id
         peer_id = current_table.id
         player = await self.app.store.blackjack.get_player_by_id(vk_id, peer_id)
 
         # Проверяем состояние игркоа
         if player.state == PlayerState.TURN_ACTIVE.str:
             user = await self.app.store.blackjack.get_user_by_id(vk_id)
-            val = update.object.body['payload']['bet']
+            val = update.payload['bet']
             bet = user.cash*val 
             
             # переводим игрока в некст состояние и заполняем его ставку
@@ -499,12 +454,7 @@ class BotManager:
                 text += f"Ход игрока @id{next_user.vk_id} ({next_user.username}) !"
 
             # Высылаем сообщение о ставке в чат
-            await self.app.store.vk_api.send_message(
-                    Message(
-                        user_id=1,
-                        text=text,
-                        peer_id = update.object.peer_id
-                    ),)
+            await self.send_message(update, text)
 
             if next_player is None:
                 # TODO: перевести стол в фазу конца ставок
@@ -536,30 +486,24 @@ class BotManager:
                     user = await self.app.store.blackjack.get_user_by_id(player.vk_id)
                     text += f"{i+1}. @id{player.vk_id} ({user.username}) - {player.bet} 💵!\n"
                     
-            keyboard = {  
-                        "one_time": False,
-                        "inline": False, 
-                        "buttons": await self.button_sender(TableState.STOP_BETS)}
-            await self.app.store.vk_api.send_message(
-                    Message(
-                        user_id=1,
-                        text=text,
-                        peer_id = update.object.peer_id
-                    ),
-                    keyboard=keyboard)
+            keyboard = await self.keyboard_constructor(TableState.STOP_BETS.str)
+            await self.send_message(update, text, keyboard)
+
         else:
-            await self.app.store.vk_api.send_message(
-                    Message(
-                        user_id=1,
-                        text="Не все игроки сделали ставки!",
-                        peer_id = update.object.peer_id
-                    ),)
+            text="Не все игроки сделали ставки!"
+            await self.send_message(update, text)
+
+
+    async def keyboard_constructor(self, command: str) -> dict:
+        return {"one_time": False,
+                "inline": False, 
+                "buttons": await self.button_sender(TableState(command))}
 
     async def snackbar_params_constructor(self, update: Update, text: str) -> tuple[dict, dict]:
         event_data = {"type": "show_snackbar",
                         "text": text}
-        params = {"event_id": update.object.body['event_id'], "user_id":update.object.body['user_id'],
-                    "peer_id": update.object.body['peer_id']}
+        params = {"event_id": update.object.body.event_id, "user_id":update.user_id,
+                    "peer_id": update.peer_id}
         return event_data, params
 
     @player_checker
@@ -579,13 +523,19 @@ class BotManager:
 
         user = await self.app.store.blackjack.get_user_by_id(player.vk_id)
         text = f"Размещайте ставки!\nВеличина ставки в размере от твоего банка!\nХод игрока @id{user.vk_id} ({user.username}) !"
+        await self.send_message(update, text, keyboard)
+
+    async def send_message(self, update: Update, text: str, keyboard=None):
         await self.app.store.vk_api.send_message(
                 Message(
                     user_id=1,
                     text=text,
-                    peer_id = update.object.peer_id
+                    peer_id = update.peer_id,
+                    payload=None,
+                    event_id=None
                 ),
                 keyboard=keyboard)
+
 
 
 

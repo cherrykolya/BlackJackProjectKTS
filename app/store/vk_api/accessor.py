@@ -68,7 +68,7 @@ class VkApiAccessor(BaseAccessor):
             self.ts = data["ts"]
             self.logger.info(self.server)
 
-    async def poll(self):
+    async def poll(self) -> list[Update]:
         new_url = self._build_query(
                 host=self.server,
                 method="",
