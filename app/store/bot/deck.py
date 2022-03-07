@@ -9,6 +9,7 @@ class Suit(Enum):
     CLUBS = "♣"
     SPADES = "♠"
 
+
 class CardName(Enum):
     TWO = "⟦2⟧"
     THREE = "⟦3⟧"
@@ -23,8 +24,9 @@ class CardName(Enum):
     LADY = "⟦D⟧"
     KING = "⟦K⟧"
     ACE = "⟦T⟧"
-    
-@dataclass    
+
+
+@dataclass
 class Card:
     suit: Suit
     card_name: CardName
@@ -32,6 +34,7 @@ class Card:
 
     def __str__(self):
         return f"{self.card_name.value} {self.suit.value} -> {self.value}"
+
 
 class Deck:
     def __init__(self):
@@ -47,4 +50,3 @@ class Deck:
 
     def shuffle_deck(self):
         random.shuffle(self.deck)
-        
