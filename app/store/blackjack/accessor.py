@@ -1,10 +1,11 @@
 import typing
-import pickle
+import json
 from typing import Optional, List
+
 
 from app.base.base_accessor import BaseAccessor
 from app.blackjack.models import User, Player, Table, TableModel, UserModel, PlayerModel
-from app.store.bot.deck import Deck
+from app.store.bot.deck import Card
 from app.store.bot.state import PlayerState
 from asyncpg import ForeignKeyViolationError, NotNullViolationError
 from sqlalchemy import and_
@@ -21,7 +22,7 @@ class BlackJackAccessor(BaseAccessor):
             await PlayerModel.create(
                 vk_id=player.vk_id,
                 table_id=player.table_id,
-                cards=pickle.dumps(player.cards),
+                cards=player.cards,
                 state=player.state,
                 bet=player.bet,
             )
@@ -29,7 +30,6 @@ class BlackJackAccessor(BaseAccessor):
             pass
 
     async def create_table(self, table: Table):
-        # TODO: изменить входные параметры на Table
         """Создает стол в БД"""
         if await self.get_table_by_peer_id(table.peer_id) is None:
             tables = await TableModel.query.gino.all()
@@ -37,7 +37,7 @@ class BlackJackAccessor(BaseAccessor):
                 id=len(tables) + 1, 
                 peer_id=table.peer_id,
                 created_at= table.created_at,
-                deck=pickle.dumps(table.deck), 
+                deck=table.deck, 
                 state=table.state
             )
         else:
@@ -106,9 +106,9 @@ class BlackJackAccessor(BaseAccessor):
             UserModel.vk_id == vk_id
         ).gino.all()
 
-    async def set_player_cards(self, vk_id: int, table_id: int, cards: Deck):
+    async def set_player_cards(self, vk_id: int, table_id: int, cards: list[Card]):
         # modification here
-        cards = pickle.dumps(cards)
+        cards = [Card.to_dict(card) for card in cards]
         await PlayerModel.update.values(cards=cards).where(
             and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)
         ).gino.all()
@@ -119,8 +119,8 @@ class BlackJackAccessor(BaseAccessor):
             and_(PlayerModel.vk_id == vk_id, PlayerModel.table_id == table_id)
         ).gino.all()
 
-    async def set_table_cards(self, id: int, cards: Deck):
-        cards = pickle.dumps(cards)
+    async def set_table_cards(self, id: int, cards: list[Card]):
+        cards = [Card.to_dict(card) for card in cards]
         await TableModel.update.values(deck=cards).where(TableModel.id == id).gino.all()
 
     async def delete_table(self, table_id: int):

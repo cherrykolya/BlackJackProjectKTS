@@ -34,6 +34,17 @@ class Card:
 
     def __str__(self):
         return f"{self.card_name.value} {self.suit.value} -> {self.value}"
+    
+    def to_dict(self) -> dict:
+        return {'suit': self.suit.value,
+                'card_name': self.card_name.value,
+                'value': self.value}
+
+    @classmethod
+    def from_dict(cls, card: dict) -> "Card":
+        return cls(suit= Suit(card['suit']),
+                   card_name=CardName(card['card_name']),
+                   value=card['value'])
 
 
 class Deck:
@@ -41,12 +52,12 @@ class Deck:
         self.deck = []
 
     def generate_deck(self):
-        k = 2
-        for i in CardName:
-            for j in Suit:
-                self.deck.append(Card(j, i, k))
-            if i not in [CardName.TEN, CardName.JACK, CardName.LADY]:
-                k += 1
+        value = 2
+        for card in CardName:
+            for suit in Suit:
+                self.deck.append(Card(suit, card, value))
+            if card not in [CardName.TEN, CardName.JACK, CardName.LADY]:
+                value += 1
 
     def shuffle_deck(self):
         random.shuffle(self.deck)
