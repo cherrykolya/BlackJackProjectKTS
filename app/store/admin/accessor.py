@@ -6,7 +6,7 @@ from app.store.database.gino import db
 
 
 from app.base.base_accessor import BaseAccessor
-#from app.admin.models import Admin, AdminModel
+from app.admin.models import Admin, AdminModel
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -18,7 +18,7 @@ class AdminAccessor(BaseAccessor):
         await super().connect(app)
         #URL = f'postgresql://{app.config.database.user}:{app.config.database.password}@{app.config.database.host}:{app.config.database.port}/{app.config.database.database}'
         #await db.set_bind(URL)
-        await db.gino.create_all()
+        #await db.gino.create_all()
         admin_existence = await self.get_by_email('admin@admin.com')
 
         if admin_existence is None:

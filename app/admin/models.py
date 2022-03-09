@@ -21,9 +21,9 @@ class Admin:
 
 # TODO
 # Дописать все необходимые поля модели
-# class AdminModel(db.Model):
-#     __tablename__ = "admins"
+class AdminModel(db.Model):
+     __tablename__ = "admins"
 
-#     id = db.Column(db.Integer, nullable=False, primary_key=True)
-#     email = db.Column(db.Unicode)
-#     password = db.Column(db.Unicode)
+     id = db.Column(db.Integer, nullable=False, primary_key=True)
+     email = db.Column(db.Unicode)
+     password = db.Column(db.Unicode)
