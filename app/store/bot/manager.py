@@ -21,7 +21,6 @@ class BotManager:
     async def handle_updates(self, updates: list[Update]):
         # TODO: Вынести логику из handle_updates
         # TODO: Посмотреть на функции больше чем 20 строк, вынести из них логику
-        # TODO: Если баланс <= 0, игрок не может зарегистрироваться
         # TODO: Добавить правила
         # TODO: добавить таймер
         for update in updates:
@@ -49,7 +48,8 @@ class BotManager:
     
     async def button_sender(self, table_state: TableState):
         button_to_send = {  TableState.WAITING_REG: [[Buttons.START_REG.value],
-                                                     [Buttons.INFO.value]],
+                                                     [Buttons.INFO.value], 
+                                                     [Buttons.RULES.value]],
                             TableState.START_REG: [[Buttons.REG_USER.value], 
                                                    [Buttons.STOP_REG.value],
                                                    [Buttons.INFO.value]],
@@ -66,8 +66,10 @@ class BotManager:
                                                    [Buttons.INFO.value],
                                                    [Buttons.END_GAME.value]],
                             TableState.END_GAME: [[Buttons.START_REG.value],
-                                                     [Buttons.INFO.value]],
-                            TableState.INFO: []                          
+                                                     [Buttons.INFO.value],
+                                                     [Buttons.RULES.value]],
+                            TableState.INFO: [],
+                            TableState.RULES: []                          
                             }
         return button_to_send[table_state]
         
@@ -79,6 +81,7 @@ class BotManager:
                             TableState.STOP_BETS: self.handle_stop_bets,
                             TableState.START_GAME: self.handle_start_game,
                             TableState.INFO: self.handle_info,
+                            TableState.RULES: self.handle_rules,
                             TableState.END_GAME: self.handle_end_game,}
         return function_to_call[table_state]
 
@@ -179,6 +182,15 @@ class BotManager:
         text += f"Победы: {user.num_of_wins} 🏆\n"
         text += f"Банк: {user.cash} 💵\n"
 
+        await self.send_message(update, text)
+
+    async def handle_rules(self, update: Update, current_table: Table, keyboard):
+        text = "В начале объявляется фаза регистрации игроков. Обратите внимание, что закрыть регистрацию можно либо по кнопке, либо регистрация автоматически завершится при наборе 5 игроков. Игроки баланс которых = 0, также не могут присоединиться к матчу."
+        text += "После этого следует фаза ставок. Игроки делают ставки по очереди, размер ставки зафиксирован и состоавляет 25%, 50%, 75%, либо 100% от размера банка игрока."
+        text += "После того как все игроки сделают ставки следует фаза игры."
+        text += "Всем игрокам будет роздано по 2 карты, а дилеру будет роздана 1 карта. Игроки также делают ходы по очереди. В свой ход игрок может либо добирать карты по одной до перебора, либо завершить ход."
+        text += "После того как все игроки завершат ход, ходит дилер. После этого карты каждого игрока будут сравнены с картами дилера и будут подведены итоги матча."
+        text += "После этого можно начинать регистрацию на новый матч."
         await self.send_message(update, text)
 
 

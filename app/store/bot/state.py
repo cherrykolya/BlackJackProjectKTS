@@ -7,13 +7,17 @@ class TableEnumMeta(EnumMeta):
         if isinstance(value, str):
             # map strings to enum values, defaults to Unknown
             value = {
+                "/rules": {
+                    "str": "/rules",
+                    "next_state": [],
+                },
                 "/info": {
                     "str": "/info",
                     "next_state": [],
                 },
                 "/waiting_reg": {
                     "str": "/waiting_reg",
-                    "next_state": ["/start_reg", "/info"],
+                    "next_state": ["/start_reg", "/info", "/rules"],
                 },
                 "/start_reg": {
                     "str": "/start_reg",
@@ -47,7 +51,7 @@ class TableState(Enum, metaclass=TableEnumMeta):
 
     WAITING_REG = {
         "str": "/waiting_reg",
-        "next_state": ["/start_reg", "/info"],
+        "next_state": ["/start_reg", "/info", "/rules"],
     }
     START_REG = {
         "str": "/start_reg",
@@ -77,6 +81,10 @@ class TableState(Enum, metaclass=TableEnumMeta):
     }
     INFO = {
         "str": "/info",
+        "next_state": [],
+    }
+    RULES = {
+        "str": "/rules",
         "next_state": [],
     }
 
@@ -199,6 +207,15 @@ class Buttons(Enum):
             "type": "text",
             "payload": {"button": "/info"},
             "label": "Моя статистика",
+        },
+    }
+
+    RULES = {
+        "color": "secondary",
+        "action": {
+            "type": "text",
+            "payload": {"button": "/rules"},
+            "label": "Правила игры",
         },
     }
 
