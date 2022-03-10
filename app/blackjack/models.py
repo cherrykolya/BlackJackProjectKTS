@@ -52,7 +52,7 @@ class Table:
     peer_id: int
     created_at: datetime
     deck: list[Card]
-    state: int
+    state: str
 
     @classmethod
     def from_database(cls, table: TableModel) -> "Table":
@@ -80,7 +80,7 @@ class Player:
     vk_id: int
     table_id: int
     cards: list[Card]
-    state: int
+    state: str
     bet: float
 
 

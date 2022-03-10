@@ -93,6 +93,15 @@ class BlackJackAccessor(BaseAccessor):
         if len(table) == 1:
             return Table.from_database(table[0])
 
+    async def get_table_by_id(self, id_: int) -> Optional[Table]:
+        # Находим незавершенный стол с таким айди, если он сущесвтует
+        table = await TableModel.query.where(TableModel.id == id_).gino.all()
+        if len(table) == 0:
+            return None
+        if len(table) == 1:
+            return Table.from_database(table[0])
+    
+
     async def get_user_by_id(self, vk_id: int) -> Optional[User]:
         user = await UserModel.query.where(UserModel.vk_id == vk_id).gino.all()
         if len(user) == 0:

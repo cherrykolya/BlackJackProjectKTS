@@ -2,7 +2,8 @@ from aiohttp.web_exceptions import HTTPConflict, HTTPNotFound, HTTPBadRequest
 from aiohttp_apispec import request_schema, response_schema, querystring_schema
 
 from app.quiz.models import Answer
-from app.blackjack.schemes import UserCashSchema
+from app.blackjack.models import User, Table, Player
+from app.blackjack.schemes import UserCashSchema, PlayerGetSchema, PlayersSchema, UserGetSchema, UserSchema, TableSchema, TableGetSchema
 from app.quiz.schemes import (
     ThemeSchema,)
 from app.web.app import View
@@ -22,3 +23,41 @@ class CashAddView(AuthRequiredMixin, View):
         await self.store.blackjack.set_user_cash(vk_id, cash)
 
         return json_response(data=UserCashSchema().dump({"vk_id": vk_id, "cash": cash}))
+
+class GetPlayersView(AuthRequiredMixin, View):
+    @request_schema(PlayerGetSchema)
+    @response_schema(PlayersSchema)
+    async def get(self):
+        table_id = self.data["table_id"]
+
+        players = await self.store.blackjack.get_players_on_table(table_id)
+        if len(players) == 0:
+            raise HTTPConflict
+
+        return json_response(data=PlayersSchema().dump({"players": players}))
+
+class GetUserView(AuthRequiredMixin, View):
+    @request_schema(UserGetSchema)
+    @response_schema(UserSchema)
+    async def get(self):
+        vk_id = self.data["vk_id"]
+
+        user = await self.store.blackjack.get_user_by_id(vk_id)
+        if not user:
+            raise HTTPConflict
+
+        return json_response(data=UserSchema().dump(user))
+
+class GetTableView(AuthRequiredMixin, View):
+    @request_schema(TableGetSchema)
+    @response_schema(TableSchema)
+    async def get(self):
+        table_id = self.data["table_id"]
+
+
+        table = await self.store.blackjack.get_table_by_id(table_id)
+        if not table:
+            raise HTTPConflict
+
+        return json_response(data=TableSchema().dump(table))
+    
