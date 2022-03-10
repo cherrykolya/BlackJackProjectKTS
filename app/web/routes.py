@@ -7,5 +7,5 @@ def setup_routes(app: Application):
     from app.blackjack.routes import setup_routes as blackjack_setup_routes
 
     admin_setup_routes(app)
-    quiz_setup_routes(app)
+    #quiz_setup_routes(app)
     blackjack_setup_routes(app)
