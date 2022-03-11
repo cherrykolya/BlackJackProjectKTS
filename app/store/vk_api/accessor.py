@@ -2,6 +2,8 @@ import random
 import typing
 from typing import Optional
 
+from app.web.utils import sjson_dumps
+
 from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
@@ -66,7 +68,7 @@ class VkApiAccessor(BaseAccessor):
             self.ts = data["ts"]
             self.logger.info(self.server)
 
-    async def poll(self):
+    async def poll(self) -> list[Update]:
         new_url = self._build_query(
                 host=self.server,
                 method="",
@@ -84,31 +86,49 @@ class VkApiAccessor(BaseAccessor):
             raw_updates = data.get("updates", [])
             updates = []
             for update in raw_updates:
-                updates.append(
-                    Update(
-                        type=update["type"],
-                        object=UpdateObject(
-                            id=update["object"]["message"]["id"],
-                            user_id=update["object"]['message']["from_id"],
-                            body=update["object"]['message']["text"],
-                        ),
-                    )
-                )
+                updates.append(Update.from_dict(update)) 
         return updates
 
-    async def send_message(self, message: Message) -> None:
+    async def send_message(self, message: Message, params = None, keyboard=None) -> None:
+        
+        if params is None:
+            params={
+                        #"user_id": None if message.peer_id else message.user_id,
+                        "random_id": random.randint(1, 2 ** 32),
+                        "peer_id": message.peer_id,
+                        "message": message.text,
+                        "access_token": self.app.config.bot.token,
+                    }
+        if keyboard is not None:
+            params["keyboard"] = sjson_dumps(keyboard)
         async with self.session.post(
             self._build_query(
                 API_PATH,
                 "messages.send",
-                params={
-                    "user_id": message.user_id,
-                    "random_id": random.randint(1, 2 ** 32),
-                    "peer_id": "-" + str(self.app.config.bot.group_id),
-                    "message": message.text,
-                    "access_token": self.app.config.bot.token,
-                },
+                params,
             )
         ) as resp:
             data = await resp.json()
             self.logger.info(data)
+
+    async def send_snackbar(self, params: dict = None, event_data: dict = None):
+        params["event_data"] = sjson_dumps(event_data)
+        params["access_token"] = self.app.config.bot.token
+        async with self.session.post(
+            self._build_query(API_PATH, "messages.sendMessageEventAnswer", params)) as resp:
+            data = await resp.json()
+            self.logger.info(data)
+
+    async def get_username(self, vk_id: int) -> str:
+        params = {"user_ids": vk_id,
+                  "access_token": self.app.config.bot.token,}
+        
+        async with self.session.get(
+            self._build_query(API_PATH, "users.get", params,)) as resp:
+            data = await resp.json()
+            self.logger.info(data)
+        username = data["response"][0]["first_name"] + " " + data["response"][0]["last_name"]
+        return username
+
+
+        

@@ -1,7 +1,7 @@
 from gino import create_engine
 from gino.api import Gino
 from app.store.database.gino import db
-#from app.admin.models import *
+from app.admin.models import *
 #from app.quiz.models import *
 from app.blackjack.models import *
 from sqlalchemy.engine.url import URL
@@ -32,6 +32,6 @@ class Database:
         await db.gino.create_all() # добавил сам
 
     async def disconnect(self, *_, **kw):
-        #await db.pop_bind().close()
+        await db.pop_bind().close()
         print('disconnected from database')
 
