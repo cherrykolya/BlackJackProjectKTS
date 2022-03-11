@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  postgresdb:
+    image: postgres
+    environment: 
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: blackjack1
+    ports:
+      - 5432:5432
+
+  blackjack:
+    build: .
+    network_mode: "host"
+
+

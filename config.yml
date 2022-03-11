@@ -10,7 +10,7 @@ database:
   port: 5432
   user: postgres
   password: postgres
-  database: blackjack1
+  database: postgres
 bot:
   token: 669ff1958aed07c72910b464f4481256f98e1eb8984057950a32508239fc4af7be1444fd15817713f055c
   group_id: 166373573
