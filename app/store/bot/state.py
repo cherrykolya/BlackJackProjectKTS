@@ -304,6 +304,21 @@ class CallbackButtons(str, Enum, metaclass=CallbackEnumMeta):
     def __str__(self) -> str:
         return str.__str__(self)
 
+class EventTypes(str, Enum):
+    MESSAGE_NEW = 'message_new'
+    MESSAGE_EVENT = 'message_event'
+
+    def __str__(self) -> str:
+        return str.__str__(self)
+
+class GameResults(str, Enum):
+    WIN = 'Победа 🥇'
+    LOSS = 'Поражение 💩'
+    DRAW = 'Ничья 🗿'
+
+    def __str__(self) -> str:
+        return str.__str__(self)
+
 
 # how to use
 # print('Name:', BugStatus.START_REG)

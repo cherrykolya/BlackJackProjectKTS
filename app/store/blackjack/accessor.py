@@ -2,7 +2,6 @@ import typing
 import json
 from typing import Optional, List
 
-
 from app.base.base_accessor import BaseAccessor
 from app.blackjack.models import User, Player, Table, TableModel, UserModel, PlayerModel
 from app.store.bot.deck import Card

@@ -2,7 +2,7 @@ import json
 
 from dataclasses import dataclass
 from distutils.log import info
-from typing import Optional
+from typing import Optional, ClassVar
 from datetime import datetime
 from app.store.database.gino import db
 from app.store.bot.deck import Card
@@ -27,6 +27,11 @@ class User:
     info: dict
     cash: int
     num_of_wins: int
+
+    DILER_ID: ClassVar[int] = 1
+    START_CASH: ClassVar[int] = 1000
+    START_WINS: ClassVar[int] = 0
+
 
     @classmethod
     def from_database(cls, user: UserModel) -> "User":

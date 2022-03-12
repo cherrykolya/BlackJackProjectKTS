@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from app.store.bot.state import EventTypes
+
 from typing import Optional
 
 
@@ -13,18 +15,12 @@ class Message:
 
     @classmethod
     def from_message_new(cls, message: dict) -> "Message":
-        if "payload" in message.keys():
-            return cls(user_id=message['from_id'],
+        return cls(user_id=message['from_id'],
                     peer_id=message['peer_id'],
                     text=message['text'],
-                    payload=message['payload'],
+                    payload=message['payload'] if "payload" in message.keys() else None,
                     event_id=None)
-        else:
-            return cls(user_id=message['from_id'],
-                    peer_id=message['peer_id'],
-                    text=message['text'],
-                    payload=None,
-                    event_id=None)
+
     
     @classmethod
     def from_message_event(cls, message: dict) -> "Message":
@@ -59,10 +55,10 @@ class Update:
 
     @classmethod
     def from_dict(cls, update: dict) -> "Update":
-        if update['type'] == 'message_new':
+        if update['type'] == EventTypes.MESSAGE_NEW:
             return cls(type=update['type'],
                        object=UpdateObject.from_message_new(update['object']))
-        elif update['type'] == 'message_event':
+        elif update['type'] == EventTypes.MESSAGE_EVENT:
             return cls(type=update['type'],
                        object=UpdateObject.from_message_event(update['object']))
     
