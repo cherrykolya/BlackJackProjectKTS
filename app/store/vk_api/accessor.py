@@ -82,12 +82,16 @@ class VkApiAccessor(BaseAccessor):
         async with self.session.get(new_url) as resp:
             data = await resp.json()
             self.logger.info(data)
-            self.ts = data["ts"]
-            raw_updates = data.get("updates", [])
-            updates = []
-            for update in raw_updates:
-                updates.append(Update.from_dict(update)) 
-        return updates
+            if "failed" in data.keys():
+                await self._get_long_poll_service()
+                return []
+            else:
+                self.ts = data["ts"]
+                raw_updates = data.get("updates", [])
+                updates = []
+                for update in raw_updates:
+                    updates.append(Update.from_dict(update)) 
+            return updates
 
     async def send_message(self, message: Message, params = None, keyboard=None) -> None:
         

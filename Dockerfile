@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /usr/src/app/
 
-EXPOSE 5432
+EXPOSE 8080
 
 ENV TZ Europe/Moscow
 

@@ -1,20 +1,18 @@
-user_token: 
+user_token: NmE0YzRjMzEtNTM2Zi00NDY5LThmNzItZTE1YmE2MTZkNGE4XzEyNTQ=
 
 session:
-  key: 
+  key: 9ClkM8o5WdqqPug7qYi__BVYDYmlTOCdeMCOBfRsvvQ=
 admin:
-  email: 
-  password: 
+  email: admin@admin.com
+  password: admin
 database:
-  host: 
-  port: 
-  user: 
-  password: 
-  database: 
+  host: 0.0.0.0
+  port: 5432
+  user: postgres
+  password: postgres
+  database: postgres
 bot:
-  token: 
-  group_id: 
-
-
+  token: 669ff1958aed07c72910b464f4481256f98e1eb8984057950a32508239fc4af7be1444fd15817713f055c
+  group_id: 166373573
 
 
