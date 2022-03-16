@@ -27,7 +27,7 @@ class VkApiAccessor(BaseAccessor):
         self.ts: Optional[int] = None
 
     async def connect(self, app: "Application"):
-        self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
+        self.session = ClientSession(connector=TCPConnector(verify_ssl=False, keepalive_timeout=True))
         try:
             await self._get_long_poll_service()
         except Exception as e:
@@ -37,10 +37,11 @@ class VkApiAccessor(BaseAccessor):
         await self.poller.start()
 
     async def disconnect(self, app: "Application"):
-        if self.session:
-            await self.session.close()
         if self.poller:
             await self.poller.stop()
+        if self.session:
+            await self.session.close()
+
 
     @staticmethod
     def _build_query(host: str, method: str, params: dict) -> str:
@@ -91,7 +92,7 @@ class VkApiAccessor(BaseAccessor):
                 updates = []
                 for update in raw_updates:
                     updates.append(Update.from_dict(update)) 
-            return updates
+                return updates
 
     async def send_message(self, message: Message, params = None, keyboard=None) -> None:
         
@@ -133,6 +134,3 @@ class VkApiAccessor(BaseAccessor):
             self.logger.info(data)
         username = data["response"][0]["first_name"] + " " + data["response"][0]["last_name"]
         return username
-
-
-        

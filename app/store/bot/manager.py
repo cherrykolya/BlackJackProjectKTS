@@ -116,7 +116,8 @@ class BotManager:
             text = f"Доступны следующие команды:<br>"
             for i, state in  enumerate(TableState(current_table.state).next_state):
                 text += f"{i+1}. {state}<br>"
-            await self.send_message(update, text)
+            keyboard = await self.keyboard_constructor(current_table.state)
+            await self.send_message(update, text, keyboard)
 
 
     async def process_callback_button_pressed(self, update: Update, current_table: Table):
@@ -194,6 +195,7 @@ class BotManager:
         text = f"Статистика пользователя @id{user.vk_id} ({user.username})<br>"
         text += f"Победы: {user.num_of_wins} 🏆<br>"
         text += f"Банк: {user.cash} 💵<br>"
+        text += f"id: {user.vk_id} ⚙️<br>"
 
         await self.send_message(update, text)
 

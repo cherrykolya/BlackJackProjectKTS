@@ -12,7 +12,7 @@ database:
   password: postgres
   database: postgres
 bot:
-  token: 669ff1958aed07c72910b464f4481256f98e1eb8984057950a32508239fc4af7be1444fd15817713f055c
-  group_id: 166373573
+  token: c4dc43f49649f74cdd3dd34e51b9a01b21f71245d72e4ae3195911f1b71f91a31cf2d6a53db57b81e84b0
+  group_id: 210524770
 
 
