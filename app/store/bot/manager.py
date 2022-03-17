@@ -254,6 +254,7 @@ class BotManager:
 
         for i, player in enumerate(players):
             # Переводим всех игроков, кроме диллера в состояние начала хода
+            
             if player.vk_id != User.DILER_ID:
                 await self.blackjack.set_player_state(player.vk_id, player.table_id, PlayerState.WAITING_TURN.str)
             
@@ -302,7 +303,7 @@ class BotManager:
 
             # Высылаем сообщение об окончании регистрации
             players = await self.blackjack.get_players_on_table(current_table.id)
-            text = "Регистрация участников окончена.<br>Список игроков:<br>"        
+            text = f"Регистрация участников окончена.<br>id стола: {current_table.id}<br>Список игроков:<br>"        
             for i, player in enumerate(players):
                 user = await self.blackjack.get_user_by_id(player.vk_id)
                 text += f"{i+1}. @id{player.vk_id} ({user.username})<br>"
@@ -452,7 +453,10 @@ class BotManager:
         diler_sum = sum([card.value for card in diler.cards])
         players = await self.blackjack.get_players_on_table(peer_id)
         text = f"Все игроки завершили ход, результаты:<br>"
+        n = 0
         for i, player in enumerate(players):
+            if player.vk_id == User.DILER_ID:
+                n -= 1
             if player.vk_id != User.DILER_ID:
                 user = await self.blackjack.get_user_by_id(player.vk_id)
                 user_sum = sum([card.value for card in player.cards])
@@ -465,12 +469,13 @@ class BotManager:
                 if result == GameResults.WIN:
                     await self.blackjack.add_win_to_user(player.vk_id)
                     await self.blackjack.set_user_cash(player.vk_id, 2*bet)
-                    text += f"{i+1}. @id{player.vk_id} ({user.username}) - {result}! + {2*bet}💵<br>"
+                    text += f"{n+1}. @id{player.vk_id} ({user.username}) - {result}! + {2*bet}💵<br>"
                 if result == GameResults.LOSS:
                     await self.blackjack.set_user_cash(player.vk_id, -bet)
-                    text += f"{i+1}. @id{player.vk_id} ({user.username}) - {result}! - {bet}💵<br>"
+                    text += f"{n+1}. @id{player.vk_id} ({user.username}) - {result}! - {bet}💵<br>"
                 if result == GameResults.DRAW:
-                    text += f"{i+1}. @id{player.vk_id} ({user.username}) - {result}! - {bet}💵<br>"
+                    text += f"{n+1}. @id{player.vk_id} ({user.username}) - {result}! - {bet}💵<br>"
+            n += 1
                 
         # переводим стол в конечное состояние
         await self.blackjack.set_table_state(peer_id, TableState.END_GAME.str)
@@ -486,10 +491,14 @@ class BotManager:
             # перевести стол в сосотояние конец ставок
             await self.blackjack.set_table_state(current_table.id, TableState.STOP_BETS.str)
             text = "Фаза ставок окончена!<br>Игроки сделали следующие ставки:<br>"
+            n = 0
             for i, player in enumerate(players):
+                if player.vk_id == User.DILER_ID:
+                    n -= 1
                 if player.vk_id != User.DILER_ID:
                     user = await self.blackjack.get_user_by_id(player.vk_id)
-                    text += f"{i+1}. @id{player.vk_id} ({user.username}) - {player.bet} 💵!<br>"
+                    text += f"{n+1}. @id{player.vk_id} ({user.username}) - {player.bet} 💵!<br>"
+                n += 1
                     
             keyboard = await self.keyboard_constructor(TableState.STOP_BETS.str)
             await self.send_message(update, text, keyboard)

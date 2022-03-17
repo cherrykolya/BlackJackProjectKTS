@@ -27,7 +27,7 @@ class VkApiAccessor(BaseAccessor):
         self.ts: Optional[int] = None
 
     async def connect(self, app: "Application"):
-        self.session = ClientSession(connector=TCPConnector(verify_ssl=False, keepalive_timeout=True))
+        self.session = ClientSession(connector=TCPConnector(verify_ssl=False, force_close=True))
         try:
             await self._get_long_poll_service()
         except Exception as e:
