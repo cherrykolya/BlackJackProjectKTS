@@ -1,5 +1,4 @@
 import typing
-#from gino import Gino
 from hashlib import sha256
 from typing import Optional
 from app.store.database.gino import db
