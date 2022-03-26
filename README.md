@@ -10,11 +10,11 @@
 - `VK poller` - получает обновления/действия пользователя из VK и передает их `Bot manager` 
 - `Bot manager` - логика обработки событий бота
 - `Admin API` - позволяет собрать статистику/информацию по проведенным и текущим играм
-![Архитектура](https://github.com/cherrykolya/BlackJackProjectKTS/main/images_for_readme/architecture.png)
+![Архитектура](https://github.com/cherrykolya/BlackJackProjectKTS/TASK_08/images_for_readme/architecture.png)
 
 ### БД
 Я выделил следующие сущности БД
-![БД](https://github.com/cherrykolya/BlackJackProjectKTS/main/images_for_readme/BD.png)
+![БД](https://github.com/cherrykolya/BlackJackProjectKTS/TASK_08/images_for_readme/BD.png)
 
 ### API
 ##### Админская часть
@@ -28,10 +28,10 @@
 - `/blackjack.get_table` - получить информацию о столе по его id
 
 Все методы и их описание доступны в swagger
-![swagger](https://github.com/cherrykolya/BlackJackProjectKTS/main/images_for_readme/swagger.png)
+![swagger](https://github.com/cherrykolya/BlackJackProjectKTS/TASK_08/images_for_readme/swagger.png)
 
 ### Пример игры
-![work](https://github.com/cherrykolya/BlackJackProjectKTS/main/images_for_readme/work.gif)
+![work](https://github.com/cherrykolya/BlackJackProjectKTS/TASK_08/images_for_readme/work.gif)
 ## Стэк
 | library | version |
 | ------ | ------ |
