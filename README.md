@@ -10,7 +10,7 @@
 - `VK poller` - получает обновления/действия пользователя из VK и передает их `Bot manager` 
 - `Bot manager` - логика обработки событий бота
 - `Admin API` - позволяет собрать статистику/информацию по проведенным и текущим играм
-![Архитектура](https://github.com/cherrykolya/BlackJackProjectKTS/TASK_08/images_for_readme/architecture.png)
+![Архитектура](https://github.com/cherrykolya/BlackJackProjectKTS/raw/TASK_08/images_for_readme/architecture.png)
 
 ### БД
 Я выделил следующие сущности БД
