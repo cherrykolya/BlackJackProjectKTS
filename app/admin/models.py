@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from hashlib import sha256
 from typing import Optional
-from sqlalchemy.dialects.postgresql import JSONB
 
 from app.store.database.gino import db
 
@@ -19,11 +18,12 @@ class Admin:
     def from_session(cls, session: Optional[dict]) -> Optional["Admin"]:
         return cls(id=session["admin"]["id"], email=session["admin"]["email"])
 
+
 # TODO
 # Дописать все необходимые поля модели
 class AdminModel(db.Model):
-     __tablename__ = "admins"
+    __tablename__ = "admins"
 
-     id = db.Column(db.Integer, nullable=False, primary_key=True)
-     email = db.Column(db.Unicode)
-     password = db.Column(db.Unicode)
+    id = db.Column(db.Integer, nullable=False, primary_key=True)
+    email = db.Column(db.Unicode)
+    password = db.Column(db.Unicode)

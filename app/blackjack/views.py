@@ -1,17 +1,28 @@
-from aiohttp.web_exceptions import HTTPConflict, HTTPNotFound, HTTPBadRequest
-from aiohttp_apispec import request_schema, response_schema, querystring_schema, docs
+from aiohttp.web_exceptions import HTTPConflict
+from aiohttp_apispec import docs, request_schema, response_schema
 
-from app.blackjack.models import User, Table, Player
-from app.blackjack.schemes import UserCashSchema, PlayerGetSchema, PlayersSchema, UserGetSchema, UserSchema, TableSchema, TableGetSchema
+from app.blackjack.schemes import (
+    PlayerGetSchema,
+    PlayersSchema,
+    TableGetSchema,
+    TableSchema,
+    UserCashSchema,
+    UserGetSchema,
+    UserSchema,
+)
 from app.web.app import View
 from app.web.mixins import AuthRequiredMixin
 from app.web.utils import json_response
 
 
 class CashAddView(AuthRequiredMixin, View):
-    @docs(tags=["BlackJack"], summary="Adds cash to user", description="Adds cash to user by vk_id")
+    @docs(
+        tags=["BlackJack"],
+        summary="Adds cash to user",
+        description="Adds cash to user by vk_id",
+    )
     @request_schema(UserCashSchema)
-    #@response_schema(UserCashSchema)
+    # @response_schema(UserCashSchema)
     async def post(self):
         vk_id = self.data["vk_id"]
         cash = self.data["cash"]
@@ -22,8 +33,13 @@ class CashAddView(AuthRequiredMixin, View):
 
         return json_response(data=UserCashSchema().dump({"vk_id": vk_id, "cash": cash}))
 
+
 class GetPlayersView(AuthRequiredMixin, View):
-    @docs(tags=["BlackJack"], summary="Returns players on the table", description="Returns players by table_id")
+    @docs(
+        tags=["BlackJack"],
+        summary="Returns players on the table",
+        description="Returns players by table_id",
+    )
     @request_schema(PlayerGetSchema)
     @response_schema(PlayersSchema)
     async def get(self):
@@ -35,8 +51,11 @@ class GetPlayersView(AuthRequiredMixin, View):
 
         return json_response(data=PlayersSchema().dump({"players": players}))
 
+
 class GetUserView(AuthRequiredMixin, View):
-    @docs(tags=["BlackJack"], summary="Returns user", description="Return user by vk_id")
+    @docs(
+        tags=["BlackJack"], summary="Returns user", description="Return user by vk_id"
+    )
     @request_schema(UserGetSchema)
     @response_schema(UserSchema)
     async def get(self):
@@ -48,8 +67,13 @@ class GetUserView(AuthRequiredMixin, View):
 
         return json_response(data=UserSchema().dump(user))
 
+
 class GetTableView(AuthRequiredMixin, View):
-    @docs(tags=["BlackJack"], summary="Returns table", description="Returns table by table_id")
+    @docs(
+        tags=["BlackJack"],
+        summary="Returns table",
+        description="Returns table by table_id",
+    )
     @request_schema(TableGetSchema)
     @response_schema(TableSchema)
     async def get(self):
@@ -60,4 +84,3 @@ class GetTableView(AuthRequiredMixin, View):
             raise HTTPConflict
 
         return json_response(data=TableSchema().dump(table))
-    

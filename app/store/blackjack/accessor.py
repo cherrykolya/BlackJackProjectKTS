@@ -1,17 +1,15 @@
 import typing
-import json
-from typing import Optional, List
+from typing import Optional
 
-from app.base.base_accessor import BaseAccessor
-from app.blackjack.models import User, Player, Table, TableModel, UserModel, PlayerModel
-from app.store.bot.deck import Card
-from app.store.bot.state import PlayerState
-from asyncpg import ForeignKeyViolationError, NotNullViolationError
 from sqlalchemy import and_
 
+from app.base.base_accessor import BaseAccessor
+from app.blackjack.models import Player, PlayerModel, Table, TableModel, User, UserModel
+from app.store.bot.deck import Card
+from app.store.bot.state import PlayerState
 
 if typing.TYPE_CHECKING:
-    from app.web.app import Application
+    pass
 
 
 class BlackJackAccessor(BaseAccessor):
@@ -33,11 +31,11 @@ class BlackJackAccessor(BaseAccessor):
         if await self.get_table_by_peer_id(table.peer_id) is None:
             tables = await TableModel.query.gino.all()
             await TableModel.create(
-                id=len(tables) + 1, 
+                id=len(tables) + 1,
                 peer_id=table.peer_id,
-                created_at= table.created_at,
-                deck=table.deck, 
-                state=table.state
+                created_at=table.created_at,
+                deck=table.deck,
+                state=table.state,
             )
         else:
             pass
@@ -99,7 +97,6 @@ class BlackJackAccessor(BaseAccessor):
             return None
         if len(table) == 1:
             return Table.from_database(table[0])
-    
 
     async def get_user_by_id(self, vk_id: int) -> Optional[User]:
         user = await UserModel.query.where(UserModel.vk_id == vk_id).gino.all()

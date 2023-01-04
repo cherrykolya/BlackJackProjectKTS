@@ -34,17 +34,21 @@ class Card:
 
     def __str__(self):
         return f"{self.card_name.value} {self.suit.value} -> {self.value}"
-    
+
     def to_dict(self) -> dict:
-        return {'suit': self.suit.value,
-                'card_name': self.card_name.value,
-                'value': self.value}
+        return {
+            "suit": self.suit.value,
+            "card_name": self.card_name.value,
+            "value": self.value,
+        }
 
     @classmethod
     def from_dict(cls, card: dict) -> "Card":
-        return cls(suit= Suit(card['suit']),
-                   card_name=CardName(card['card_name']),
-                   value=card['value'])
+        return cls(
+            suit=Suit(card["suit"]),
+            card_name=CardName(card["card_name"]),
+            value=card["value"],
+        )
 
 
 class Deck:

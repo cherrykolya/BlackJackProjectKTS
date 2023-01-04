@@ -2,14 +2,13 @@ import random
 import typing
 from typing import Optional
 
-from app.web.utils import sjson_dumps
-
 from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
 from app.base.base_accessor import BaseAccessor
-from app.store.vk_api.dataclasses import Update, Message, UpdateObject
+from app.store.vk_api.dataclasses import Message, Update
 from app.store.vk_api.poller import Poller
+from app.web.utils import sjson_dumps
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
@@ -27,7 +26,9 @@ class VkApiAccessor(BaseAccessor):
         self.ts: Optional[int] = None
 
     async def connect(self, app: "Application"):
-        self.session = ClientSession(connector=TCPConnector(verify_ssl=False, force_close=True))
+        self.session = ClientSession(
+            connector=TCPConnector(verify_ssl=False, force_close=True)
+        )
         try:
             await self._get_long_poll_service()
         except Exception as e:
@@ -41,7 +42,6 @@ class VkApiAccessor(BaseAccessor):
             await self.poller.stop()
         if self.session:
             await self.session.close()
-
 
     @staticmethod
     def _build_query(host: str, method: str, params: dict) -> str:
@@ -71,15 +71,15 @@ class VkApiAccessor(BaseAccessor):
 
     async def poll(self) -> list[Update]:
         new_url = self._build_query(
-                host=self.server,
-                method="",
-                params={
-                    "act": "a_check",
-                    "key": self.key,
-                    "ts": self.ts,
-                    "wait": 5,
-                },
-            )
+            host=self.server,
+            method="",
+            params={
+                "act": "a_check",
+                "key": self.key,
+                "ts": self.ts,
+                "wait": 5,
+            },
+        )
         async with self.session.get(new_url) as resp:
             data = await resp.json()
             self.logger.info(data)
@@ -91,19 +91,19 @@ class VkApiAccessor(BaseAccessor):
                 raw_updates = data.get("updates", [])
                 updates = []
                 for update in raw_updates:
-                    updates.append(Update.from_dict(update)) 
+                    updates.append(Update.from_dict(update))
                 return updates
 
-    async def send_message(self, message: Message, params = None, keyboard=None) -> None:
-        
+    async def send_message(self, message: Message, params=None, keyboard=None) -> None:
+
         if params is None:
-            params={
-                        #"user_id": None if message.peer_id else message.user_id,
-                        "random_id": random.randint(1, 2 ** 32),
-                        "peer_id": message.peer_id,
-                        "message": message.text,
-                        "access_token": self.app.config.bot.token,
-                    }
+            params = {
+                # "user_id": None if message.peer_id else message.user_id,
+                "random_id": random.randint(1, 2**32),
+                "peer_id": message.peer_id,
+                "message": message.text,
+                "access_token": self.app.config.bot.token,
+            }
         if keyboard is not None:
             params["keyboard"] = sjson_dumps(keyboard)
         async with self.session.post(
@@ -120,17 +120,27 @@ class VkApiAccessor(BaseAccessor):
         params["event_data"] = sjson_dumps(event_data)
         params["access_token"] = self.app.config.bot.token
         async with self.session.post(
-            self._build_query(API_PATH, "messages.sendMessageEventAnswer", params)) as resp:
+            self._build_query(API_PATH, "messages.sendMessageEventAnswer", params)
+        ) as resp:
             data = await resp.json()
             self.logger.info(data)
 
     async def get_username(self, vk_id: int) -> str:
-        params = {"user_ids": vk_id,
-                  "access_token": self.app.config.bot.token,}
-        
+        params = {
+            "user_ids": vk_id,
+            "access_token": self.app.config.bot.token,
+        }
+
         async with self.session.get(
-            self._build_query(API_PATH, "users.get", params,)) as resp:
+            self._build_query(
+                API_PATH,
+                "users.get",
+                params,
+            )
+        ) as resp:
             data = await resp.json()
             self.logger.info(data)
-        username = data["response"][0]["first_name"] + " " + data["response"][0]["last_name"]
+        username = (
+            data["response"][0]["first_name"] + " " + data["response"][0]["last_name"]
+        )
         return username

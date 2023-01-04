@@ -1,5 +1,5 @@
-import typing
 from enum import Enum, EnumMeta
+
 
 # СОСТОЯНИЯ СТОЛА
 class TableEnumMeta(EnumMeta):
@@ -283,6 +283,7 @@ class Buttons(Enum):
         },
     }
 
+
 class CallbackEnumMeta(EnumMeta):
     def __call__(cls, value, *args, **kw):
         if isinstance(value, str):
@@ -291,30 +292,33 @@ class CallbackEnumMeta(EnumMeta):
                 "reg": "reg",
                 "add_card": "add_card",
                 "end_turn": "end_turn",
-                "bet": "bet"
+                "bet": "bet",
             }.get(value, 0)
         return super().__call__(value, *args, **kw)
 
+
 class CallbackButtons(str, Enum, metaclass=CallbackEnumMeta):
-    REG = 'reg'
-    ADD_CARD = 'add_card'
-    END_TURN = 'end_turn'
-    PLACE_BET = 'bet'
+    REG = "reg"
+    ADD_CARD = "add_card"
+    END_TURN = "end_turn"
+    PLACE_BET = "bet"
 
     def __str__(self) -> str:
         return str.__str__(self)
+
 
 class EventTypes(str, Enum):
-    MESSAGE_NEW = 'message_new'
-    MESSAGE_EVENT = 'message_event'
+    MESSAGE_NEW = "message_new"
+    MESSAGE_EVENT = "message_event"
 
     def __str__(self) -> str:
         return str.__str__(self)
 
+
 class GameResults(str, Enum):
-    WIN = 'Победа 🥇'
-    LOSS = 'Поражение 💩'
-    DRAW = 'Ничья 🗿'
+    WIN = "Победа 🥇"
+    LOSS = "Поражение 💩"
+    DRAW = "Ничья 🗿"
 
     def __str__(self) -> str:
         return str.__str__(self)

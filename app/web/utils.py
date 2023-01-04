@@ -33,7 +33,8 @@ def error_json_response(
         },
     )
 
+
 def sjson_dumps(*args, **kwargs):
-    kwargs['ensure_ascii'] = False
-    kwargs['separators'] = (',', ':')
+    kwargs["ensure_ascii"] = False
+    kwargs["separators"] = (",", ":")
     return json.dumps(*args, **kwargs)

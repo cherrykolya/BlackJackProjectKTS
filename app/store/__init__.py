@@ -8,10 +8,11 @@ if typing.TYPE_CHECKING:
 
 class Store:
     def __init__(self, app: "Application"):
-        from app.store.bot.manager import BotManager
         from app.store.admin.accessor import AdminAccessor
-        from app.store.vk_api.accessor import VkApiAccessor
         from app.store.blackjack.accessor import BlackJackAccessor
+        from app.store.bot.manager import BotManager
+        from app.store.vk_api.accessor import VkApiAccessor
+
         self.admins = AdminAccessor(app)
         self.blackjack = BlackJackAccessor(app)
         self.vk_api = VkApiAccessor(app)
@@ -23,4 +24,3 @@ def setup_store(app: "Application"):
     app.on_startup.append(app.database.connect)
     app.on_cleanup.append(app.database.disconnect)
     app.store = Store(app)
-    
